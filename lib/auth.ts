@@ -17,25 +17,32 @@ export async function login(email: string, password: string) {
   if (!user) throw new Error('Credenciais inválidas')
   const ok = await bcrypt.compare(password, user.passwordHash)
   if (!ok) throw new Error('Credenciais inválidas')
-  const requires2FA = !!user.twoFASecret
-  const token = jwt.sign({ sub: user.id, requires2FA }, process.env.JWT_SECRET!, { expiresIn: '1h' })
-  return { token, requires2FA }
+  const require2FA = !!user.twoFASecret
+  const token = jwt.sign({ sub: user.id, require2FA }, process.env.JWT_SECRET!, { expiresIn: '1h' })
+  return { token, require2FA }
 }
 
 export function verifyJWT(token: string) {
   return jwt.verify(token, process.env.JWT_SECRET!) as any
 }
 
-export async function setup2FA(userId: string) {
+export function setup2FA(userId: string) {
   const secret = speakeasy.generateSecret({ length: 20, name: `${process.env.TOTP_ISSUER}:${userId}` })
-  const enc = encryptJSON({ ascii: secret.ascii, base32: secret.base32, otpauth_url: secret.otpauth_url })
-  await prisma.user.update({ where: { id: userId }, data: { twoFASecret: enc } })
-  return secret.otpauth_url
+  return { base32: secret.base32, otpauth_url: secret.otpauth_url }
 }
 
-export async function verify2FA(userId: string, token: string) {
+export async function verify2FASetup(userId: string, secret: string, token: string) {
+  const ok = speakeasy.totp.verify({ secret, encoding: 'base32', token })
+  if (!ok) return false
+  const enc = encryptJSON({ base32: secret })
+  await prisma.user.update({ where: { id: userId }, data: { twoFASecret: enc } })
+  return true
+}
+
+export async function verify2FAToken(userId: string, token: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (!user?.twoFASecret) return false
   const secret = decryptJSON(user.twoFASecret)
-  return speakeasy.totp.verify({ secret: secret.base32, encoding: 'base32', token, window: 1 })
+  const base32 = secret.base32 || secret
+  return speakeasy.totp.verify({ secret: base32, encoding: 'base32', token, window: 1 })
 }

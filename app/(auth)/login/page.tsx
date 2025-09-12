@@ -11,7 +11,7 @@ export default function Login() {
     const r = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password}) })
     const j = await r.json()
     if (!j.ok) { alert(j.error || 'Erro'); return }
-    if (j.requires2FA) setNeeds2fa(true)
+    if (j.require2FA) setNeeds2fa(true)
     else window.location.href = '/dashboard'
   }
 

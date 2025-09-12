@@ -4,8 +4,8 @@ import { login } from '@/lib/auth'
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json()
   try {
-    const { token, requires2FA } = await login(email, password)
-    const res = NextResponse.json({ ok: true, requires2FA })
+    const { token, require2FA } = await login(email, password)
+    const res = NextResponse.json({ ok: true, require2FA })
     res.cookies.set('session', token, {
       httpOnly: true,
       secure: true,
