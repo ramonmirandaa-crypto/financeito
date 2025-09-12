@@ -27,6 +27,8 @@ cp .env.example .env
 nano .env
 ```
 
+No arquivo `.env`, defina `ENCRYPTION_KEY_BASE64` com uma chave de 32 bytes codificada em Base64 para criptografia dos dados sensíveis.
+
 ## 5) Subir containers
 ```bash
 docker compose build
