@@ -16,7 +16,11 @@ export default function Login() {
   }
 
   async function verify2FA() {
-    const r = await fetch('/api/auth/twofa-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: code }) })
+    const r = await fetch('/api/auth/twofa/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: code })
+    })
     const j = await r.json()
     if (!j.ok) { alert(j.error || 'Erro 2FA'); return }
     window.location.href = '/dashboard'

@@ -5,7 +5,7 @@ export default function TwoFA() {
   const [url, setUrl] = useState<string>('')
   const [verified, setVerified] = useState(false)
   async function setup() {
-    const r = await fetch('/api/auth/twofa-setup', { method:'POST' })
+    const r = await fetch('/api/auth/twofa/setup', { method: 'POST' })
     const j = await r.json()
     setUrl(j.otpauth_url)
   }
