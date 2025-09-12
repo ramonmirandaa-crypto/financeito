@@ -36,3 +36,9 @@ export async function listTransactions(params: { itemId?: string; accountId?: st
   const { data } = await axios.get(`${BASE_URL}/transactions`, { params, headers })
   return data
 }
+
+export async function listAccounts(params: { itemId?: string; page?: number; pageSize?: number }) {
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/accounts`, { params, headers })
+  return data
+}
