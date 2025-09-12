@@ -1,0 +1,51 @@
+
+services:
+  db:
+    image: postgres:16
+    container_name: financeito-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: financeito-web
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    command: ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+    volumes:
+      - app_data:/app/.data
+
+  backup:
+    image: node:20
+    container_name: financeito-backup
+    restart: unless-stopped
+    working_dir: /app
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./scripts:/app/scripts
+      - backups:/backups
+    entrypoint: ["/bin/sh", "/app/scripts/cron.sh"]
+
+volumes:
+  db_data:
+  webroot:
+  backups:
+  app_data:
+  tls_files:

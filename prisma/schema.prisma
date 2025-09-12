@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String
+  twoFASecret   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  subscriptions Subscription[]
+  goals         Goal[]
+  budgets       Budget[]
+  recurrences   Recurrence[]
+  familyLoans   FamilyLoan[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model Account {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  provider     String
+  providerItem String?
+  name         String
+  currency     String
+  balance      Decimal  @db.Decimal(18,2)
+  mask         String?
+  dataEnc      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id])
+  userId      String
+  description String
+  category    String?
+  currency    String
+  amount      Decimal  @db.Decimal(18,2)
+  date        DateTime
+  isRecurring Boolean  @default(false)
+  rawEnc      String?
+  createdAt   DateTime @default(now())
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  month     Int
+  year      Int
+  currency  String
+  limit     Decimal @db.Decimal(18,2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  target    Decimal @db.Decimal(18,2)
+  saved     Decimal @db.Decimal(18,2) @default(0)
+  currency  String
+  deadline  DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  amount      Decimal @db.Decimal(18,2)
+  currency    String
+  interval    String   // monthly, yearly
+  nextCharge  DateTime
+  createdAt   DateTime @default(now())
+}
+
+model Recurrence {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  description String
+  amount      Decimal @db.Decimal(18,2)
+  currency    String
+  interval    String
+  nextDate    DateTime
+  createdAt   DateTime @default(now())
+}
+
+model FamilyLoan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  person      String
+  currency    String
+  principal   Decimal @db.Decimal(18,2)
+  balance     Decimal @db.Decimal(18,2)
+  dueDate     DateTime?
+  notesEnc    String?
+  createdAt   DateTime @default(now())
+}
