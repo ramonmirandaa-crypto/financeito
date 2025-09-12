@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+out
+db_data
+backup
+.env
+*.crt
+*.key
