@@ -45,7 +45,5 @@ services:
 
 volumes:
   db_data:
-  webroot:
   backups:
   app_data:
-  tls_files:
