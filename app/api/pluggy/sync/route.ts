@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listAccounts, listTransactions } from '@/lib/pluggy'
-import { encryptJSON } from '@/lib/crypto'
+import { encryptJSON, decryptJSON } from '@/lib/crypto'
 import { prisma, getUserFromRequest } from '@/lib/apiAuth'
 import { Prisma } from '@prisma/client'
 
@@ -75,6 +75,18 @@ export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const accounts = await prisma.account.findMany({ where: { userId: user.id } })
-  const transactions = await prisma.transaction.findMany({ where: { userId: user.id }, orderBy: { date: 'desc' }, take: 50 })
-  return NextResponse.json({ accounts, transactions })
+  const transactions = await prisma.transaction.findMany({
+    where: { userId: user.id },
+    orderBy: { date: 'desc' },
+    take: 50,
+  })
+  const accs = accounts.map((a) => ({
+    ...a,
+    data: a.dataEnc ? decryptJSON(a.dataEnc) : null,
+  }))
+  const txs = transactions.map((t) => ({
+    ...t,
+    raw: t.rawEnc ? decryptJSON(t.rawEnc) : null,
+  }))
+  return NextResponse.json({ accounts: accs, transactions: txs })
 }
