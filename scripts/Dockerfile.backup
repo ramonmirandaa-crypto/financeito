@@ -1,12 +1,16 @@
 FROM node:20
 
-RUN apt-get update && apt-get install -y postgresql-client \
+# Install PostgreSQL client and cron to run scheduled backups
+RUN apt-get update && apt-get install -y postgresql-client cron \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN npm init -y && npm install googleapis minimist
+# Install Node dependencies declared in package.json
+COPY package*.json ./
+RUN npm install
 
+# Copy backup scripts
 COPY . /app/scripts
 
 ENTRYPOINT ["/bin/sh", "/app/scripts/cron.sh"]
