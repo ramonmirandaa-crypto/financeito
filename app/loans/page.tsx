@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { LoanForm } from '@/components/forms/loan-form'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 
 interface Loan {
@@ -25,6 +26,8 @@ export default function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null)
+  const [deletingLoan, setDeletingLoan] = useState<string | null>(null)
 
   useEffect(() => {
     loadLoans()
@@ -41,6 +44,59 @@ export default function LoansPage() {
       console.error('Erro ao carregar empréstimos:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCreateLoan(loanData: any) {
+    try {
+      const res = await fetch('/api/loans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loanData)
+      })
+      
+      if (res.ok) {
+        const newLoan = await res.json()
+        setLoans(prev => [newLoan, ...prev])
+        setShowCreateForm(false)
+      }
+    } catch (error) {
+      console.error('Erro ao criar empréstimo:', error)
+    }
+  }
+
+  async function handleEditLoan(loanData: any) {
+    if (!editingLoan) return
+    
+    try {
+      const res = await fetch(`/api/loans/${editingLoan.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loanData)
+      })
+      
+      if (res.ok) {
+        const updatedLoan = await res.json()
+        setLoans(prev => prev.map(l => l.id === editingLoan.id ? updatedLoan : l))
+        setEditingLoan(null)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar empréstimo:', error)
+    }
+  }
+
+  async function handleDeleteLoan(loanId: string) {
+    try {
+      const res = await fetch(`/api/loans/${loanId}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        setLoans(prev => prev.filter(l => l.id !== loanId))
+        setDeletingLoan(null)
+      }
+    } catch (error) {
+      console.error('Erro ao deletar empréstimo:', error)
     }
   }
 
@@ -315,15 +371,44 @@ export default function LoansPage() {
         </div>
       )}
 
-      {/* Create Loan Modal - Placeholder */}
+      {/* Loan Forms */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateForm(false)}>
-          <LiquidCard className="max-w-md w-full m-4" onClick={() => {}}>
-            <h3 className="text-xl font-semibold mb-4 text-white">Novo Empréstimo</h3>
-            <p className="text-slate-400 mb-4">Funcionalidade em desenvolvimento...</p>
-            <LiquidButton variant="secondary" onClick={() => setShowCreateForm(false)}>
-              Fechar
-            </LiquidButton>
+        <LoanForm
+          onSubmit={handleCreateLoan}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {editingLoan && (
+        <LoanForm
+          loan={editingLoan}
+          onSubmit={handleEditLoan}
+          onCancel={() => setEditingLoan(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingLoan && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <LiquidCard className="max-w-md w-full m-4">
+            <h3 className="text-xl font-semibold mb-4 text-white">Confirmar Exclusão</h3>
+            <p className="text-slate-400 mb-6">Tem certeza que deseja excluir este empréstimo? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3">
+              <LiquidButton 
+                variant="secondary" 
+                onClick={() => setDeletingLoan(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </LiquidButton>
+              <LiquidButton 
+                variant="primary" 
+                onClick={() => handleDeleteLoan(deletingLoan)}
+                className="flex-1 bg-red-500 hover:bg-red-600"
+              >
+                Excluir
+              </LiquidButton>
+            </div>
           </LiquidCard>
         </div>
       )}

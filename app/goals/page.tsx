@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { GoalForm } from '@/components/forms/goal-form'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 
 interface Goal {
@@ -23,6 +24,8 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [deletingGoal, setDeletingGoal] = useState<string | null>(null)
 
   useEffect(() => {
     loadGoals()
@@ -39,6 +42,59 @@ export default function GoalsPage() {
       console.error('Erro ao carregar metas:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCreateGoal(goalData: any) {
+    try {
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(goalData)
+      })
+      
+      if (res.ok) {
+        const newGoal = await res.json()
+        setGoals(prev => [newGoal, ...prev])
+        setShowCreateForm(false)
+      }
+    } catch (error) {
+      console.error('Erro ao criar meta:', error)
+    }
+  }
+
+  async function handleEditGoal(goalData: any) {
+    if (!editingGoal) return
+    
+    try {
+      const res = await fetch(`/api/goals/${editingGoal.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(goalData)
+      })
+      
+      if (res.ok) {
+        const updatedGoal = await res.json()
+        setGoals(prev => prev.map(g => g.id === editingGoal.id ? updatedGoal : g))
+        setEditingGoal(null)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar meta:', error)
+    }
+  }
+
+  async function handleDeleteGoal(goalId: string) {
+    try {
+      const res = await fetch(`/api/goals/${goalId}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        setGoals(prev => prev.filter(g => g.id !== goalId))
+        setDeletingGoal(null)
+      }
+    } catch (error) {
+      console.error('Erro ao deletar meta:', error)
     }
   }
 
@@ -268,15 +324,44 @@ export default function GoalsPage() {
         </div>
       )}
 
-      {/* Create Goal Modal - Placeholder */}
+      {/* Goal Forms */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateForm(false)}>
-          <LiquidCard className="max-w-md w-full m-4" onClick={() => {}}>
-            <h3 className="text-xl font-semibold mb-4 text-white">Criar Nova Meta</h3>
-            <p className="text-slate-400 mb-4">Funcionalidade em desenvolvimento...</p>
-            <LiquidButton variant="secondary" onClick={() => setShowCreateForm(false)}>
-              Fechar
-            </LiquidButton>
+        <GoalForm
+          onSubmit={handleCreateGoal}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {editingGoal && (
+        <GoalForm
+          goal={editingGoal}
+          onSubmit={handleEditGoal}
+          onCancel={() => setEditingGoal(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingGoal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <LiquidCard className="max-w-md w-full m-4">
+            <h3 className="text-xl font-semibold mb-4 text-white">Confirmar Exclusão</h3>
+            <p className="text-slate-400 mb-6">Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3">
+              <LiquidButton 
+                variant="secondary" 
+                onClick={() => setDeletingGoal(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </LiquidButton>
+              <LiquidButton 
+                variant="primary" 
+                onClick={() => handleDeleteGoal(deletingGoal)}
+                className="flex-1 bg-red-500 hover:bg-red-600"
+              >
+                Excluir
+              </LiquidButton>
+            </div>
           </LiquidCard>
         </div>
       )}

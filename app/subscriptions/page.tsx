@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { SubscriptionForm } from '@/components/forms/subscription-form'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 
 interface Subscription {
@@ -23,6 +24,8 @@ export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null)
+  const [deletingSubscription, setDeletingSubscription] = useState<string | null>(null)
 
   useEffect(() => {
     loadSubscriptions()
@@ -39,6 +42,59 @@ export default function SubscriptionsPage() {
       console.error('Erro ao carregar assinaturas:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCreateSubscription(subscriptionData: any) {
+    try {
+      const res = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscriptionData)
+      })
+      
+      if (res.ok) {
+        const newSubscription = await res.json()
+        setSubscriptions(prev => [newSubscription, ...prev])
+        setShowCreateForm(false)
+      }
+    } catch (error) {
+      console.error('Erro ao criar assinatura:', error)
+    }
+  }
+
+  async function handleEditSubscription(subscriptionData: any) {
+    if (!editingSubscription) return
+    
+    try {
+      const res = await fetch(`/api/subscriptions/${editingSubscription.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscriptionData)
+      })
+      
+      if (res.ok) {
+        const updatedSubscription = await res.json()
+        setSubscriptions(prev => prev.map(s => s.id === editingSubscription.id ? updatedSubscription : s))
+        setEditingSubscription(null)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar assinatura:', error)
+    }
+  }
+
+  async function handleDeleteSubscription(subscriptionId: string) {
+    try {
+      const res = await fetch(`/api/subscriptions/${subscriptionId}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        setSubscriptions(prev => prev.filter(s => s.id !== subscriptionId))
+        setDeletingSubscription(null)
+      }
+    } catch (error) {
+      console.error('Erro ao deletar assinatura:', error)
     }
   }
 
@@ -318,15 +374,44 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {/* Create Subscription Modal - Placeholder */}
+      {/* Subscription Forms */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateForm(false)}>
-          <LiquidCard className="max-w-md w-full m-4" onClick={() => {}}>
-            <h3 className="text-xl font-semibold mb-4 text-white">Nova Assinatura</h3>
-            <p className="text-slate-400 mb-4">Funcionalidade em desenvolvimento...</p>
-            <LiquidButton variant="secondary" onClick={() => setShowCreateForm(false)}>
-              Fechar
-            </LiquidButton>
+        <SubscriptionForm
+          onSubmit={handleCreateSubscription}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {editingSubscription && (
+        <SubscriptionForm
+          subscription={editingSubscription}
+          onSubmit={handleEditSubscription}
+          onCancel={() => setEditingSubscription(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingSubscription && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <LiquidCard className="max-w-md w-full m-4">
+            <h3 className="text-xl font-semibold mb-4 text-white">Confirmar Exclusão</h3>
+            <p className="text-slate-400 mb-6">Tem certeza que deseja excluir esta assinatura? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3">
+              <LiquidButton 
+                variant="secondary" 
+                onClick={() => setDeletingSubscription(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </LiquidButton>
+              <LiquidButton 
+                variant="primary" 
+                onClick={() => handleDeleteSubscription(deletingSubscription)}
+                className="flex-1 bg-red-500 hover:bg-red-600"
+              >
+                Excluir
+              </LiquidButton>
+            </div>
           </LiquidCard>
         </div>
       )}
