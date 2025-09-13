@@ -13,3 +13,8 @@ fi
 cd /backups && tar czf "$STAMP.tar.gz" "$STAMP" && rm -rf "$STAMP"
 
 node /app/scripts/gdrive-upload.js --file "/backups/$STAMP.tar.gz" --retention "$BACKUP_RETENTION_DAYS"
+rm -f "/backups/$STAMP.tar.gz"
+
+if [ -n "$BACKUP_RETENTION_DAYS" ]; then
+  find /backups -name '*.tar.gz' -mtime +"$BACKUP_RETENTION_DAYS" -delete
+fi
