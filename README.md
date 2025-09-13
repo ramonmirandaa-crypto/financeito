@@ -75,7 +75,7 @@ docker compose exec web npx prisma migrate deploy
   ```bash
   docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh
   ```
-  O arquivo gerado é enviado ao Google Drive e mantido por `BACKUP_RETENTION_DAYS`.
+  O arquivo gerado é enviado ao Google Drive e mantido por `BACKUP_RETENTION_DAYS`. Caso queira sobrescrever este valor em uma execução específica do `gdrive-upload.js`, use `--retention N`.
 - **Exportar tabelas em JSON/CSV**
   ```bash
   docker compose exec backup node /app/scripts/gdrive-upload.js --export-json /backups/json --skip-upload
