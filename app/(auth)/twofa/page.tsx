@@ -1,12 +1,14 @@
 'use client'
 import { useState } from 'react'
 import QRCode from 'qrcode'
+import { useRouter } from 'next/navigation'
 
 export default function TwoFA() {
   const [qr, setQr] = useState('')
   const [secret, setSecret] = useState('')
   const [code, setCode] = useState('')
   const [msg, setMsg] = useState('')
+  const router = useRouter()
 
   async function setup() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('2fa_token') : null
@@ -31,8 +33,11 @@ export default function TwoFA() {
       body: JSON.stringify({ secret, token: code })
     })
     const j = await r.json()
-    if (j.ok) setMsg('2FA ativado com sucesso')
-    else setMsg(j.error || 'Código inválido')
+    if (j.ok) {
+      setMsg('2FA ativado com sucesso')
+      if (typeof window !== 'undefined') localStorage.removeItem('2fa_token')
+      setTimeout(() => router.push('/dashboard'), 1500)
+    } else setMsg(j.error || 'Código inválido')
   }
 
   return (
