@@ -25,7 +25,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "5000:5000"
     command: ["sh","-c","./node_modules/.bin/prisma migrate deploy && npm run start"]
 
   backup:

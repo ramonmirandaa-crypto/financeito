@@ -23,5 +23,5 @@ COPY --from=builder --chown=appuser:appuser /app/prisma ./prisma
 
 USER appuser
 
-EXPOSE 3000
+EXPOSE 5000
 CMD ["npm", "run", "start"]
