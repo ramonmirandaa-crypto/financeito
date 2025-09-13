@@ -29,6 +29,7 @@ export async function getUserFromRequest(req: NextRequest) {
   if (!token) return null
   try {
     const payload = verifyToken(token)
+    if (payload?.require2FA) return null
     if (!payload?.sub) return null
     const user = await prisma.user.findUnique({ where: { id: payload.sub as string } })
     return user
