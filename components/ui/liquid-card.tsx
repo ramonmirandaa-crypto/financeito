@@ -1,20 +1,49 @@
 import * as React from 'react'
+import { motion } from 'framer-motion'
 
-interface LiquidCardProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface LiquidCardProps {
+  className?: string
+  style?: React.CSSProperties
+  variant?: 'default' | 'hoverable' | 'interactive'
+  glowColor?: string
+  children?: React.ReactNode
+  onClick?: () => void
+}
 
 export const LiquidCard = React.forwardRef<HTMLDivElement, LiquidCardProps>(
-  ({ className = '', style, ...props }, ref) => {
+  ({ className = '', style, variant = 'default', glowColor, children, onClick }, ref) => {
+    const baseClasses = 'glass-effect rounded-3xl p-6 relative overflow-hidden'
+    const variantClasses = {
+      default: '',
+      hoverable: 'glass-hover cursor-pointer',
+      interactive: 'glass-hover cursor-pointer'
+    }
+
     return (
-      <div
+      <motion.div
         ref={ref}
-        className={`backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-4 shadow-xl ${className}`}
+        className={`${baseClasses} ${variantClasses[variant]} ${className}`}
         style={{
-          boxShadow:
-            '0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+          ...(glowColor && {
+            filter: `drop-shadow(0 0 20px ${glowColor}40)`
+          }),
           ...(style || {}),
         }}
-        {...props}
-      />
+        whileHover={variant === 'interactive' ? { scale: 1.02 } : {}}
+        whileTap={variant === 'interactive' ? { scale: 0.98 } : {}}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        onClick={onClick}
+      >
+        {/* Subtle animated background pattern */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-blue-400/30 to-purple-600/30 rounded-full blur-3xl floating-animation" />
+        </div>
+        <div className="relative z-10">
+          {children}
+        </div>
+      </motion.div>
     )
   }
 )

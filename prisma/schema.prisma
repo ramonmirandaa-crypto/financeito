@@ -8,14 +8,18 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String         @id @default(cuid())
+  email        String         @unique
   name         String?
   passwordHash String
   twoFASecret  String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   accounts     Account[]
+  budgets      Budget[]
+  goals        Goal[]
+  subscriptions Subscription[]
+  loans        Loan[]
 }
 
 model Account {
@@ -32,6 +36,7 @@ model Account {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   transactions Transaction[]
+  budgetItems  BudgetItem[]
 }
 
 model Transaction {
@@ -47,4 +52,87 @@ model Transaction {
   isRecurring Boolean  @default(false)
   rawEnc      String?
   createdAt   DateTime @default(now())
+}
+
+model Budget {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  name        String
+  totalAmount Decimal      @db.Decimal(18, 2)
+  currency    String       @default("BRL")
+  period      String       // "monthly", "weekly", "yearly"
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  items       BudgetItem[]
+}
+
+model BudgetItem {
+  id         String  @id @default(cuid())
+  budgetId   String
+  budget     Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  accountId  String?
+  account    Account? @relation(fields: [accountId], references: [id])
+  category   String
+  amount     Decimal @db.Decimal(18, 2)
+  spent      Decimal @db.Decimal(18, 2) @default(0)
+  currency   String  @default("BRL")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  targetAmount Decimal @db.Decimal(18, 2)
+  currentAmount Decimal @db.Decimal(18, 2) @default(0)
+  currency    String   @default("BRL")
+  targetDate  DateTime
+  isCompleted Boolean  @default(false)
+  category    String?  // "vacation", "emergency", "purchase", "investment", etc.
+  priority    String   @default("medium") // "high", "medium", "low"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  amount      Decimal  @db.Decimal(18, 2)
+  currency    String   @default("BRL")
+  billingCycle String  // "monthly", "yearly", "weekly"
+  nextBilling DateTime
+  isActive    Boolean  @default(true)
+  category    String?  // "entertainment", "software", "services", etc.
+  autoRenew   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Loan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  title         String
+  description   String?
+  amount        Decimal  @db.Decimal(18, 2)
+  currency      String   @default("BRL")
+  lenderName    String   // Nome de quem emprestou ou para quem emprestou
+  lenderContact String?  // Contato opcional
+  type          String   // "lent" (emprestei para alguém) ou "borrowed" (peguei emprestado)
+  interestRate  Decimal? @db.Decimal(5, 2) // Taxa de juros opcional
+  dueDate       DateTime?
+  isPaid        Boolean  @default(false)
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
