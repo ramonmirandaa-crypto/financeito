@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
 import { verifyJWT, verify2FASetup, verify2FAToken } from '@/lib/auth'
-import { getTokenFromRequest, setAuthCookie } from '@/lib/apiAuth'
+import { getTokenFromRequest, setAuthCookie, signToken } from '@/lib/apiAuth'
 
 export async function POST(req: NextRequest) {
   const session = getTokenFromRequest(req)
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
   } else {
     const ok = await verify2FAToken(userId, token)
     if (!ok) return NextResponse.json({ ok: false, error: 'Código inválido' }, { status: 400 })
-    const newToken = jwt.sign({ sub: userId, require2FA: false }, process.env.JWT_SECRET!, { expiresIn: '1h' })
+    const newToken = signToken(userId, { require2FA: false })
     const res = NextResponse.json({ ok: true })
     setAuthCookie(res, newToken)
     return res
