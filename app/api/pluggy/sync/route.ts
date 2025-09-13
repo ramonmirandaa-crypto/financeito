@@ -40,9 +40,16 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const txResp = await listTransactions({ itemId, pageSize: 500 })
-  const txs = txResp.results || txResp
-  for (const tx of txs) {
+  const firstResp = await listTransactions({ itemId, pageSize: 500 })
+  const allTxs = [...(firstResp.results || firstResp)]
+  let nextPage = firstResp.nextPage || firstResp.results?.nextPage
+  while (nextPage) {
+    const resp = await listTransactions({ itemId, pageSize: 500, page: nextPage })
+    allTxs.push(...(resp.results || resp))
+    nextPage = resp.nextPage || resp.results?.nextPage
+  }
+
+  for (const tx of allTxs) {
     await prisma.transaction.upsert({
       where: { id: tx.id },
       update: {
