@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import * as speakeasy from 'speakeasy'
 import { encryptJSON, decryptJSON } from './crypto'
 import { prisma } from './db'
+import { signToken } from './apiAuth'
 
 export async function register(email: string, password: string) {
   const hash = await bcrypt.hash(password, Number(process.env.PASSWORD_HASH_ROUNDS || 12))
@@ -16,7 +17,7 @@ export async function login(email: string, password: string) {
   const ok = await bcrypt.compare(password, user.passwordHash)
   if (!ok) throw new Error('Credenciais inválidas')
   const require2FA = !!user.twoFASecret
-  const token = jwt.sign({ sub: user.id, require2FA }, process.env.JWT_SECRET!, { expiresIn: '1h' })
+  const token = signToken(user.id, { require2FA })
   return { token, require2FA }
 }
 
