@@ -20,6 +20,7 @@ import { motion } from 'framer-motion'
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
+  const [sdkReady, setSdkReady] = useState(false)
 
   async function loadData() {
     const r = await fetch('/api/pluggy/sync')
@@ -36,6 +37,19 @@ export default function Dashboard() {
 
   useEffect(() => { loadData() }, [])
 
+  useEffect(() => {
+    if ((window as any).PluggyConnect) {
+      setSdkReady(true)
+      return
+    }
+    const script = document.querySelector<HTMLScriptElement>(
+      'script[src="https://connect.pluggy.ai/sdk.js"]'
+    )
+    const handler = () => setSdkReady(true)
+    script?.addEventListener('load', handler)
+    return () => script?.removeEventListener('load', handler)
+  }, [])
+
   const handleConnect = async () => {
     const r = await fetch('/api/pluggy/link-token', { method: 'POST' })
     if (r.status === 401) {
@@ -45,7 +59,11 @@ export default function Dashboard() {
     const json = await r.json()
     const connectToken = json.connectToken || json.linkToken
     // @ts-ignore
-    const connect = new window.PluggyConnect({ connectToken })
+    if (!(window as any).PluggyConnect) {
+      alert('SDK carregando')
+      return
+    }
+    const connect = new (window as any).PluggyConnect({ connectToken })
     connect.onSuccess(async (item: any) => {
       const resp = await fetch('/api/pluggy/sync', {
         method: 'POST',
@@ -108,7 +126,9 @@ export default function Dashboard() {
               <li key={a.id}>{a.name}: {a.balance}</li>
             ))}
           </ul>
-          <LiquidButton onClick={handleConnect}>Conectar Conta</LiquidButton>
+          <LiquidButton onClick={handleConnect} disabled={!sdkReady}>
+            Conectar Conta
+          </LiquidButton>
         </LiquidCard>
       </motion.div>
 
