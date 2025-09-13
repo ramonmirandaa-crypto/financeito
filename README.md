@@ -43,6 +43,7 @@ cp .env.example .env
 nano .env
 ```
 No arquivo `.env`, defina `ENCRYPTION_KEY_BASE64` com uma chave de 32 bytes codificada em Base64 para criptografia dos dados sensíveis.
+A aplicação não inicia sem uma `ENCRYPTION_KEY_BASE64` válida (deve decodificar para 32 bytes).
 
 ### Variáveis Pluggy
 - `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET`: credenciais do painel Pluggy.

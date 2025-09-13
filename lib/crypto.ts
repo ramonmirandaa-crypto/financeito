@@ -2,6 +2,9 @@ import crypto from 'crypto'
 const keyB64 = process.env.ENCRYPTION_KEY_BASE64 || ''
 if (!keyB64) console.warn('ENCRYPTION_KEY_BASE64 não definido!')
 const key = Buffer.from(keyB64, 'base64') // 32 bytes
+if (key.length !== 32) {
+  throw new Error('ENCRYPTION_KEY_BASE64 inválido: deve decodificar para 32 bytes')
+}
 
 export function encryptJSON(obj: any): string {
   const iv = crypto.randomBytes(12)
