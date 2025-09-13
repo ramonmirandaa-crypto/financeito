@@ -7,3 +7,5 @@ backup
 .env
 *.crt
 *.key
+
+*.zip
