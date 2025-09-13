@@ -1,0 +1,12 @@
+FROM node:20
+
+RUN apt-get update && apt-get install -y postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN npm init -y && npm install googleapis minimist
+
+COPY . /app/scripts
+
+ENTRYPOINT ["/bin/sh", "/app/scripts/cron.sh"]

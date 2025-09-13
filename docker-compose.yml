@@ -31,17 +31,16 @@ services:
       - app_data:/app/.data
 
   backup:
-    image: node:20
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.backup
     container_name: financeito-backup
     restart: unless-stopped
-    working_dir: /app
     env_file: .env
     depends_on:
       - db
     volumes:
-      - ./scripts:/app/scripts
       - backups:/backups
-    entrypoint: ["/bin/sh", "/app/scripts/cron.sh"]
 
 volumes:
   db_data:
