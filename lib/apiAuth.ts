@@ -1,16 +1,15 @@
-import { cookies, headers } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { PrismaClient } from '@prisma/client'
 
 export const prisma = new PrismaClient()
 
-const COOKIE_NAME = 'auth'
+const COOKIE_NAME = 'session'
 const MAX_AGE = 60 * 60 * 24 * 7 // 7 dias
 
-export function signToken(payload: object) {
+export function signToken(sub: string, payload: object = {}) {
   const secret = process.env.JWT_SECRET!
-  return jwt.sign(payload, secret, { expiresIn: `${MAX_AGE}s` })
+  return jwt.sign({ sub, ...payload }, secret, { expiresIn: `${MAX_AGE}s` })
 }
 
 export function verifyToken(token: string) {
@@ -21,8 +20,7 @@ export function verifyToken(token: string) {
 export function getTokenFromRequest(req: NextRequest) {
   const auth = req.headers.get('authorization') || ''
   if (auth.startsWith('Bearer ')) return auth.slice(7)
-  const cookieStore = cookies()
-  const c = cookieStore.get(COOKIE_NAME)
+  const c = req.cookies.get(COOKIE_NAME)
   return c?.value
 }
 
@@ -31,8 +29,8 @@ export async function getUserFromRequest(req: NextRequest) {
   if (!token) return null
   try {
     const payload = verifyToken(token)
-    if (!payload?.uid) return null
-    const user = await prisma.user.findUnique({ where: { id: payload.uid as string } })
+    if (!payload?.sub) return null
+    const user = await prisma.user.findUnique({ where: { id: payload.sub as string } })
     return user
   } catch {
     return null
