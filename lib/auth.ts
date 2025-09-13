@@ -1,10 +1,8 @@
 import bcrypt from 'bcryptjs'
-import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 import * as speakeasy from 'speakeasy'
 import { encryptJSON, decryptJSON } from './crypto'
-
-const prisma = new PrismaClient()
+import { prisma } from './db'
 
 export async function register(email: string, password: string) {
   const hash = await bcrypt.hash(password, Number(process.env.PASSWORD_HASH_ROUNDS || 12))

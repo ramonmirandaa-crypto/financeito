@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { PrismaClient } from '@prisma/client'
-
-export const prisma = new PrismaClient()
+import { prisma } from './db'
 
 const COOKIE_NAME = 'session'
 const MAX_AGE = 60 * 60 * 24 * 7 // 7 dias
