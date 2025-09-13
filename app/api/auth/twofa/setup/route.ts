@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyJWT, setup2FA } from '@/lib/auth'
+import { getTokenFromRequest } from '@/lib/apiAuth'
 
 export async function POST(req: NextRequest) {
-  const token = req.cookies.get('session')?.value
+  const token = getTokenFromRequest(req)
   if (!token) return NextResponse.json({ ok: false, error: 'Não autenticado' }, { status: 401 })
   const payload = verifyJWT(token)
   const userId = payload.sub as string
