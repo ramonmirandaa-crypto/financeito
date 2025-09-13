@@ -80,6 +80,7 @@ O contêiner `web` executa `./node_modules/.bin/prisma migrate deploy` automatic
 
 ## 8) Proxy externo (Nginx/Cloudflare)
 - No `.env`, `PUBLIC_BASE_URL` deve usar `https://`.
+- A variável `DOMAIN` foi removida; use apenas `PUBLIC_BASE_URL` para definir o domínio público.
 - Configure o proxy apontando para `http://localhost:3000` (container `web`).
 - Encaminhe os cabeçalhos `Host`, `X-Real-IP`, `X-Forwarded-For` e `X-Forwarded-Proto`.
 - Se utilizar Nginx, copie `nginx.conf` para `/etc/nginx/nginx.conf` no servidor host e reinicie o serviço.
