@@ -48,6 +48,9 @@ async function exportJson(dir){
 
 async function main(){
   const args = require('minimist')(process.argv.slice(2))
+  if(args.retention){
+    process.env.BACKUP_RETENTION_DAYS = String(args.retention)
+  }
   if(args['export-json']){
     await exportJson(args['export-json'])
   }
