@@ -75,7 +75,7 @@ A aplicação não inicia sem uma `ENCRYPTION_KEY_BASE64` válida (deve decodifi
 ## 7) Subir containers
 ```bash
 docker compose build
-docker compose up -d db web
+docker compose up -d db web backup
 docker compose exec web npx prisma migrate deploy
 ```
 
@@ -86,6 +86,11 @@ docker compose exec web npx prisma migrate deploy
 - Se utilizar Nginx, copie `nginx.conf` para `/etc/nginx/nginx.conf` no servidor host e reinicie o serviço.
 
 ## 9) Backup, restauração e verificação do TLS
+O contêiner `backup` executa rotinas agendadas via cron para gerar backups automáticos.
+Para verificar os logs dessas execuções, utilize:
+```bash
+docker compose logs backup
+```
 - **Backup manual**
   ```bash
   docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh
