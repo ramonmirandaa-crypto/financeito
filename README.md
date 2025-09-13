@@ -7,6 +7,11 @@
 - Sincronização e listagem de transações.
 - Recursos como orçamento, metas, assinaturas, recorrências e empréstimos familiares ainda não estão disponíveis.
 
+## Cookie de Sessão
+
+- Em desenvolvimento (`NODE_ENV !== 'production'`), o cookie de sessão é criado sem a flag `Secure`, permitindo o uso em `http://localhost`.
+- Em produção (`NODE_ENV === 'production'`), a flag `Secure` é aplicada e o cookie só é transmitido via HTTPS.
+
 ## 1) Cloudflare – Registro A
 1. Acesse o painel do Cloudflare e selecione a zona do domínio.
 2. Em **DNS**, clique em **Add record** e escolha **Type A**.
