@@ -1,5 +1,12 @@
 # Financeito – Guia Rápido
 
+## Recursos Suportados
+
+- Autenticação de usuários com suporte a 2FA.
+- Conexão de contas bancárias via Pluggy.
+- Sincronização e listagem de transações.
+- Recursos como orçamento, metas, assinaturas, recorrências e empréstimos familiares ainda não estão disponíveis.
+
 ## 1) Cloudflare – Registro A
 1. Acesse o painel do Cloudflare e selecione a zona do domínio.
 2. Em **DNS**, clique em **Add record** e escolha **Type A**.
