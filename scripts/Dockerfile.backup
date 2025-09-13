@@ -11,6 +11,6 @@ COPY package*.json ./
 RUN npm install
 
 # Copy backup scripts
-COPY . /app/scripts
+COPY . .
 
-ENTRYPOINT ["/bin/sh", "/app/scripts/cron.sh"]
+ENTRYPOINT ["/bin/sh", "/app/cron.sh"]
