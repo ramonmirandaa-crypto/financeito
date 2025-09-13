@@ -15,22 +15,12 @@ model User {
   twoFASecret   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  sessions      Session[]
   accounts      Account[]
   subscriptions Subscription[]
   goals         Goal[]
   budgets       Budget[]
   recurrences   Recurrence[]
   familyLoans   FamilyLoan[]
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  token     String   @unique
-  createdAt DateTime @default(now())
-  expiresAt DateTime
 }
 
 model Account {
