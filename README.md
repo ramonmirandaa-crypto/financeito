@@ -24,11 +24,11 @@
    Os dados do PostgreSQL serão armazenados em `/mnt/dados/financeito/db` e os backups em `/mnt/dados/financeito/backups`.
 2. Use o botão **Shell** no topo da interface para abrir um terminal no host.
 
-## 4) Copiar projeto para o TrueNAS (Shell)
+## 4) Clonar o projeto no TrueNAS (Shell)
 ```bash
-mkdir -p /mnt/dados/financeito/app && cd /mnt/dados/financeito/app
-# Envie o zip para esta pasta e extraia:
-# unzip financeito-project.zip -d .
+mkdir -p /mnt/dados/financeito && cd /mnt/dados/financeito
+git clone https://github.com/ramonmirandaa-crypto/financeito.git app
+cd app
 ```
 
 ## 5) TLS (arquivos)
