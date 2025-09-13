@@ -4,21 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
-
-interface BudgetItem {
-  id?: string
-  name: string
-  amount: number
-  spent?: number
-  category?: string
-}
-
-interface Budget {
-  id?: string
-  name: string
-  totalAmount: number
-  items: BudgetItem[]
-}
+import { Budget, BudgetItem } from '@/types/budget'
 
 interface BudgetFormProps {
   budget?: Budget

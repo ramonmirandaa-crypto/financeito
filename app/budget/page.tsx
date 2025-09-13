@@ -5,27 +5,8 @@ import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { BudgetForm } from '@/components/forms/budget-form'
+import { Budget, BudgetItem } from '@/types/budget'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
-
-interface Budget {
-  id: string
-  name: string
-  totalAmount: number
-  currency: string
-  period: string
-  startDate: string
-  endDate: string
-  isActive: boolean
-  items: BudgetItem[]
-}
-
-interface BudgetItem {
-  id: string
-  category: string
-  amount: number
-  spent: number
-  currency: string
-}
 
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -153,7 +134,7 @@ export default function BudgetPage() {
                     <div>
                       <p className="text-sm text-slate-400 mb-2">Período: {activeBudget.period}</p>
                       <p className="text-sm text-slate-400 mb-4">
-                        {new Date(activeBudget.startDate).toLocaleDateString()} - {new Date(activeBudget.endDate).toLocaleDateString()}
+                        {new Date(activeBudget.startDate!).toLocaleDateString()} - {new Date(activeBudget.endDate!).toLocaleDateString()}
                       </p>
                       
                       <div className="space-y-3">
@@ -167,14 +148,14 @@ export default function BudgetPage() {
                         <div className="flex justify-between">
                           <span className="text-slate-300">Total Gasto:</span>
                           <span className="font-semibold text-red-300">
-                            {activeBudget.currency} {activeBudget.items.reduce((acc, item) => acc + item.spent, 0).toFixed(2)}
+                            {activeBudget.currency} {activeBudget.items.reduce((acc, item) => acc + (item.spent ?? 0), 0).toFixed(2)}
                           </span>
                         </div>
                         
                         <div className="flex justify-between">
                           <span className="text-slate-300">Restante:</span>
                           <span className="font-semibold text-green-300">
-                            {activeBudget.currency} {(activeBudget.totalAmount - activeBudget.items.reduce((acc, item) => acc + item.spent, 0)).toFixed(2)}
+                            {activeBudget.currency} {(activeBudget.totalAmount - activeBudget.items.reduce((acc, item) => acc + (item.spent ?? 0), 0)).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -186,7 +167,7 @@ export default function BudgetPage() {
                           <Pie 
                             data={activeBudget.items.map(item => ({
                               name: item.category,
-                              value: item.spent,
+                              value: item.spent ?? 0,
                               budget: item.amount
                             }))}
                             dataKey="value" 
@@ -212,7 +193,7 @@ export default function BudgetPage() {
                   <h4 className="text-lg font-semibold mb-4 text-white">Categorias do Orçamento</h4>
                   <div className="space-y-3">
                     {activeBudget.items.map((item, index) => {
-                      const percentage = (item.spent / item.amount) * 100
+                      const percentage = ((item.spent ?? 0) / item.amount) * 100
                       const isOverBudget = percentage > 100
                       
                       return (
@@ -225,7 +206,7 @@ export default function BudgetPage() {
                           </div>
                           
                           <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
-                            <span>Gasto: {item.currency} {item.spent.toFixed(2)}</span>
+                            <span>Gasto: {item.currency} {(item.spent ?? 0).toFixed(2)}</span>
                             <span>Orçamento: {item.currency} {item.amount.toFixed(2)}</span>
                           </div>
                           
@@ -269,7 +250,7 @@ export default function BudgetPage() {
                   <p className="text-slate-400 text-sm">Nenhum orçamento criado ainda</p>
                 ) : (
                   budgets.map((budget) => (
-                    <div key={budget.id} className="p-3 glass-effect rounded-lg">
+                    <div key={budget.id!} className="p-3 glass-effect rounded-lg">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-white text-sm">{budget.name}</span>
                         <div className="flex items-center gap-2">
@@ -286,7 +267,7 @@ export default function BudgetPage() {
                             ✏️
                           </button>
                           <button
-                            onClick={() => setDeletingBudget(budget.id)}
+                            onClick={() => setDeletingBudget(budget.id!)}
                             className="text-red-400 hover:text-red-300 text-xs"
                             title="Excluir"
                           >
