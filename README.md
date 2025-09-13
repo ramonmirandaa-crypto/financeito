@@ -74,10 +74,9 @@ A aplicação não inicia sem uma `ENCRYPTION_KEY_BASE64` válida (deve decodifi
 
 ## 7) Subir containers
 ```bash
-docker compose build
-docker compose up -d db web backup
-docker compose exec web npx prisma migrate deploy
+docker compose up -d --build db web backup
 ```
+O contêiner `web` executa `./node_modules/.bin/prisma migrate deploy` automaticamente ao iniciar.
 
 ## 8) Proxy externo (Nginx/Cloudflare)
 - No `.env`, `PUBLIC_BASE_URL` deve usar `https://`.
