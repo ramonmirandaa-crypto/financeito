@@ -1,0 +1,97 @@
+Você é engenheiro(a) full-stack sênior.  
+Gere um projeto COMPLETO e FUNCIONAL de **aplicativo pessoal de finanças** com design clean/minimalista “liquid glass”, totalmente em **Português BR**, e integração real com **Open Finance via “Meu Pluggy” (uso pessoal gratuito)**.  
+O ambiente de execução será **Replit** (plano gratuito), e o domínio será publicado em **https://financeapp.ramonma.online**, configurado via **Cloudflare**.
+
+====================
+OBJETIVO
+====================
+Centralizar finanças pessoais (múltiplas moedas, orçamento inteligente, metas, assinaturas, recorrências, empréstimos familiares) com:  
+- Criptografia de dados sensíveis.  
+- Login/registro com 2FA.  
+- Backup automático em Google Drive.  
+- Implantação direta no Replit, acessível publicamente.  
+
+====================
+STACK E ARQUITETURA
+====================
+- **Frontend**: Next.js 14 (App Router) + TypeScript + TailwindCSS + shadcn/ui + Framer Motion (animações) + Recharts (gráficos).  
+- **Backend**: Next.js API Routes em TypeScript.  
+- **Banco**: PostgreSQL hospedado externamente (pode ser Supabase, Neon, Render ou outro gratuito).  
+- **Autenticação**: JWT + e-mail/senha + 2FA (TOTP).  
+- **Criptografia**: AES-256-GCM para dados sensíveis.  
+- **Infra no Replit**:
+  - Projeto monorepo (frontend+backend juntos em Next.js).
+  - Scripts `npm run dev` e `npm run build` para compatibilidade.  
+  - Arquivo `replit.nix` configurado.  
+- **Configuração de Secrets**:
+  - Usar o painel “Secrets” do Replit para variáveis de ambiente.  
+  - Gerar também um `.env.example` apenas como referência (sem dados reais).  
+
+====================
+ENTREGÁVEIS
+====================
+1. Estrutura do projeto Next.js completa.  
+2. `package.json` com scripts compatíveis.  
+3. `replit.nix` configurado para Node.js 20+.  
+4. Arquivo `.env.example` com todas as variáveis necessárias:
+   - PUBLIC_BASE_URL=https://financeapp.ramonma.online  
+   - DATABASE_URL=… (Postgres externo)  
+   - PLUGGY_CLIENT_ID / PLUGGY_CLIENT_SECRET  
+   - GDRIVE_SERVICE_ACCOUNT_JSON (conteúdo do JSON em base64)  
+   - JWT_SECRET / ENCRYPTION_KEY_BASE64  
+   - SMTP_HOST, SMTP_USER, SMTP_PASS  
+5. Prisma schema + migrations.  
+6. Scripts de backup (Node.js) para:
+   - Executar `pg_dump` remoto via conexão externa.  
+   - Subir para Google Drive (API, Service Account).  
+7. `README.md` em Português BR com **passo a passo para leigos** na interface do Replit.  
+
+====================
+PASSO A PASSO (DEVE SER GERADO PELO GPT-5)
+====================
+1. **Replit**:
+   - Criar projeto → selecionar “Node.js”.
+   - Substituir arquivos pelo monorepo Next.js.
+   - Abrir “Shell” e rodar `npm install`.  
+2. **Banco PostgreSQL**:
+   - Criar instância gratuita no **Supabase/Neon**.
+   - Copiar `DATABASE_URL`.
+   - Adicionar ao “Secrets” no Replit.  
+   - Rodar `npx prisma migrate deploy`.  
+3. **Configurar variáveis**:
+   - No Replit, “Secrets” → adicionar todas (Pluggy, Google Drive, SMTP).  
+   - Explicar como gerar chaves Pluggy (via Meu Pluggy), JSON Google Drive e SMTP.  
+   - Sempre **pare e pergunte** antes de usar minhas credenciais.  
+4. **Cloudflare**:
+   - Criar CNAME ou A para `financeapp.ramonma.online` → apontar para domínio fornecido pelo Replit (ex.: `myapp.username.repl.co`).  
+   - Explicar Proxy Status (laranja/cinza).  
+   - Orientar a usar “Always Use HTTPS” no Cloudflare.  
+5. **Rodar App**:
+   - No Replit, clicar “Run”.
+   - Acessar `https://financeapp.ramonma.online`.  
+   - Validar TLS com cadeado verde.  
+6. **Testes**:
+   - Criar usuário, ativar 2FA.  
+   - Conectar Pluggy (sandbox) e validar importação de transações.  
+   - Criar objetivos, orçamentos, empréstimos e gerar fatura PDF.  
+   - Executar backup manual e confirmar upload no Drive.  
+
+====================
+PONTOS DE PARADA (SEMPRE PERGUNTE ANTES DE CONTINUAR)
+====================
+- `DATABASE_URL` (Postgres externo).  
+- Credenciais Pluggy (Meu Pluggy).  
+- JSON da Service Account do Google Drive.  
+- Credenciais SMTP (host, user, pass).  
+- Nome exato do subdomínio Replit para configurar no Cloudflare.  
+
+====================
+CRITÉRIOS DE ACEITE
+====================
+- Projeto roda com botão **Run** no Replit.  
+- Acesso público em `https://financeapp.ramonma.online`.  
+- TLS válido via Cloudflare.  
+- Login/registro com 2FA funcionando.  
+- Pluggy integrando contas e transações.  
+- Backup diário para Google Drive.  
+- UI “liquid glass” responsiva e animada.  
