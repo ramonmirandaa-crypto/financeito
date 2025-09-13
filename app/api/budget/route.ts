@@ -1,0 +1,103 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyJWT } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+
+export async function GET(request: NextRequest) {
+  try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const payload = verifyJWT(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
+    }
+
+    const budgets = await prisma.budget.findMany({
+      where: { userId: payload.userId },
+      include: {
+        items: true
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Convert Decimal to number for JSON serialization
+    const formattedBudgets = budgets.map((budget: any) => ({
+      ...budget,
+      totalAmount: Number(budget.totalAmount),
+      items: budget.items.map((item: any) => ({
+        ...item,
+        amount: Number(item.amount),
+        spent: Number(item.spent)
+      }))
+    }))
+
+    return NextResponse.json(formattedBudgets)
+  } catch (error) {
+    console.error('Erro ao buscar orçamentos:', error)
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const payload = verifyJWT(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
+    }
+
+    const data = await request.json()
+    const { name, totalAmount, currency, period, startDate, endDate, items } = data
+
+    // Validate required fields
+    if (!name || !totalAmount || !period || !startDate || !endDate) {
+      return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 })
+    }
+
+    // Create budget
+    const budget = await prisma.budget.create({
+      data: {
+        userId: payload.userId,
+        name,
+        totalAmount: Number(totalAmount),
+        currency: currency || 'BRL',
+        period,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        isActive: true,
+        items: {
+          create: items?.map((item: any) => ({
+            category: item.category,
+            amount: Number(item.amount),
+            currency: item.currency || currency || 'BRL'
+          })) || []
+        }
+      },
+      include: {
+        items: true
+      }
+    })
+
+    // Convert Decimal to number for JSON serialization
+    const formattedBudget = {
+      ...budget,
+      totalAmount: Number(budget.totalAmount),
+      items: budget.items.map((item: any) => ({
+        ...item,
+        amount: Number(item.amount),
+        spent: Number(item.spent)
+      }))
+    }
+
+    return NextResponse.json(formattedBudget, { status: 201 })
+  } catch (error) {
+    console.error('Erro ao criar orçamento:', error)
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+  }
+}
