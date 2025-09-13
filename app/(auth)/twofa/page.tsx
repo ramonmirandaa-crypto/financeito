@@ -9,7 +9,11 @@ export default function TwoFA() {
   const [msg, setMsg] = useState('')
 
   async function setup() {
-    const r = await fetch('/api/auth/twofa/setup', { method: 'POST' })
+    const token = typeof window !== 'undefined' ? localStorage.getItem('2fa_token') : null
+    const r = await fetch('/api/auth/twofa/setup', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined
+    })
     const j = await r.json()
     setSecret(j.secret)
     const dataUrl = await QRCode.toDataURL(j.otpauth_url)
@@ -17,9 +21,13 @@ export default function TwoFA() {
   }
 
   async function verify() {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('2fa_token') : null
     const r = await fetch('/api/auth/twofa/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
       body: JSON.stringify({ secret, token: code })
     })
     const j = await r.json()
