@@ -9,7 +9,7 @@ export default function Register() {
     const r = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password}) })
     const j = await r.json()
     if (!j.ok) { alert(j.error || 'Erro'); return }
-    window.location.href = '/(auth)/login'
+    window.location.href = '/login'
   }
 
   return (

@@ -33,7 +33,7 @@ export default function Login() {
         <input className="w-full px-3 py-2 rounded bg-white/10" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="w-full px-3 py-2 rounded bg-white/10" type="password" placeholder="Senha" value={password} onChange={e=>setPassword(e.target.value)} />
         <button className="px-4 py-2 rounded bg-white/20" onClick={doLogin}>Entrar</button>
-        <p className="text-sm opacity-80">Ainda não tem conta? <a href="/(auth)/register" className="underline">Registrar</a></p>
+        <p className="text-sm opacity-80">Ainda não tem conta? <a href="/register" className="underline">Registrar</a></p>
       </>) : (<>
         <h1 className="text-2xl font-semibold">2FA</h1>
         <input className="w-full px-3 py-2 rounded bg-white/10" placeholder="Código 6 dígitos" value={code} onChange={e=>setCode(e.target.value)} />
