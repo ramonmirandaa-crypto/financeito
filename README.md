@@ -18,8 +18,10 @@
 1. Na GUI do TrueNAS, navegue em **Storage → Pools → dados → Add Dataset** e crie:
    - `financeito`
    - `financeito/app`
+   - `financeito/db`
    - `financeito/tls`
    - `financeito/backups`
+   Os dados do PostgreSQL serão armazenados em `/mnt/dados/financeito/db` e os backups em `/mnt/dados/financeito/backups`.
 2. Use o botão **Shell** no topo da interface para abrir um terminal no host.
 
 ## 4) Copiar projeto para o TrueNAS (Shell)
@@ -76,7 +78,7 @@ docker compose exec web npx prisma migrate deploy
   ```bash
   docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh
   ```
-  O arquivo gerado é enviado ao Google Drive e mantido por `BACKUP_RETENTION_DAYS`. Caso queira sobrescrever este valor em uma execução específica do `gdrive-upload.js`, use `--retention N`.
+  O arquivo gerado é salvo em `/mnt/dados/financeito/backups` e enviado ao Google Drive, sendo mantido por `BACKUP_RETENTION_DAYS`. Caso queira sobrescrever este valor em uma execução específica do `gdrive-upload.js`, use `--retention N`.
 - **Exportar tabelas em JSON/CSV**
   ```bash
   docker compose exec backup node /app/scripts/gdrive-upload.js --export-json /backups/json --skip-upload
