@@ -16,12 +16,20 @@ function getAuth(){
 async function ensureRetention(drive, folderId, days){
   if(!days) return
   const cutoff = Date.now() - (Number(days) * 86400000)
-  const res = await drive.files.list({ q: `'${folderId}' in parents and trashed=false`, fields:'files(id, name, createdTime)' })
-  for(const f of res.data.files){
-    if(new Date(f.createdTime).getTime() < cutoff){
-      await drive.files.delete({ fileId: f.id })
+  let pageToken
+  do {
+    const res = await drive.files.list({
+      q: `'${folderId}' in parents and trashed=false`,
+      fields: 'nextPageToken, files(id, name, createdTime)',
+      pageToken
+    })
+    for(const f of res.data.files){
+      if(new Date(f.createdTime).getTime() < cutoff){
+        await drive.files.delete({ fileId: f.id })
+      }
     }
-  }
+    pageToken = res.data.nextPageToken
+  } while(pageToken)
 }
 
 async function exportJson(dir){
@@ -73,4 +81,8 @@ async function main(){
   console.log('Upload concluído:', res.data.id)
 }
 
-main().catch(e=>{ console.error(e); process.exit(1) })
+if(require.main === module){
+  main().catch(e=>{ console.error(e); process.exit(1) })
+}
+
+module.exports = { ensureRetention, exportJson, getAuth }
