@@ -76,6 +76,16 @@ docker compose exec web npx prisma migrate deploy
   docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh
   ```
   O arquivo gerado é enviado ao Google Drive e mantido por `BACKUP_RETENTION_DAYS`.
+- **Exportar tabelas em JSON/CSV**
+  ```bash
+  docker compose exec backup node /app/scripts/gdrive-upload.js --export-json /backups/json --skip-upload
+  ```
+  Exemplo de saída:
+  ```text
+  Exported users (2 rows)
+  Exported accounts (5 rows)
+  ```
+  O upload só ocorre quando `--skip-upload` não é utilizado.
 - **Restauração**
   Baixe um `.tar.gz` do Drive para `/mnt/dados/financeito/backups` e execute:
   ```bash

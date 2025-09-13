@@ -24,12 +24,38 @@ async function ensureRetention(drive, folderId, days){
   }
 }
 
+async function exportJson(dir){
+  const { Client } = require('pg')
+  const client = new Client({ connectionString: process.env.DATABASE_URL })
+  await client.connect()
+  fs.mkdirSync(dir, { recursive: true })
+  const tables = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+  for(const { table_name } of tables.rows){
+    const res = await client.query(`SELECT * FROM "${table_name}"`)
+    const jsonPath = path.join(dir, `${table_name}.json`)
+    fs.writeFileSync(jsonPath, JSON.stringify(res.rows, null, 2))
+    const columns = res.fields.map(f=>f.name)
+    const lines = [columns.join(',')]
+    for(const row of res.rows){
+      lines.push(columns.map(c=>JSON.stringify(row[c] ?? '')).join(','))
+    }
+    const csvPath = path.join(dir, `${table_name}.csv`)
+    fs.writeFileSync(csvPath, lines.join('\n'))
+    console.log(`Exported ${table_name} (${res.rowCount} rows)`)    
+  }
+  await client.end()
+}
+
 async function main(){
   const args = require('minimist')(process.argv.slice(2))
-  const auth = getAuth()
-  const drive = google.drive({ version: 'v3', auth })
+  if(args['export-json']){
+    await exportJson(args['export-json'])
+  }
 
   if(args['skip-upload']) return
+
+  const auth = getAuth()
+  const drive = google.drive({ version: 'v3', auth })
 
   const file = args.file
   const folderId = process.env.GDRIVE_BACKUP_FOLDER_ID
