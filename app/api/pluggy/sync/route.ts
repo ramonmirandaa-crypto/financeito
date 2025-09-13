@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listAccounts, listTransactions } from '@/lib/pluggy'
 import { encryptJSON, decryptJSON } from '@/lib/crypto'
-import { prisma, getUserFromRequest } from '@/lib/apiAuth'
+import { getUserFromRequest } from '@/lib/apiAuth'
+import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
