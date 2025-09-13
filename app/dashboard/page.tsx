@@ -23,6 +23,10 @@ export default function Dashboard() {
 
   async function loadData() {
     const r = await fetch('/api/pluggy/sync')
+    if (r.status === 401) {
+      window.location.href = '/login'
+      return
+    }
     if (r.ok) {
       const json = await r.json()
       setAccounts((json.accounts || []).map((a: any) => ({ ...a, balance: Number(a.balance) })))
@@ -34,16 +38,24 @@ export default function Dashboard() {
 
   const handleConnect = async () => {
     const r = await fetch('/api/pluggy/link-token', { method: 'POST' })
+    if (r.status === 401) {
+      window.location.href = '/login'
+      return
+    }
     const json = await r.json()
     const connectToken = json.connectToken || json.linkToken
     // @ts-ignore
     const connect = new window.PluggyConnect({ connectToken })
     connect.onSuccess(async (item: any) => {
-      await fetch('/api/pluggy/sync', {
+      const resp = await fetch('/api/pluggy/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemId: item.id }),
       })
+      if (resp.status === 401) {
+        window.location.href = '/login'
+        return
+      }
       await loadData()
     })
     connect.init()
