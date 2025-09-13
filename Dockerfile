@@ -1,7 +1,7 @@
 # Build
 FROM node:20 as builder
 WORKDIR /app
-COPY package*.json ./
+COPY package*.json prisma ./
 RUN npm ci || npm install
 COPY . .
 RUN npm run build
