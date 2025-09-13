@@ -93,7 +93,7 @@ docker compose exec web npx prisma migrate deploy
   ```
 - **Verificar TLS**
   ```bash
-  curl -I https://financeapp.ramonma.online/healthz
+  curl -I https://financeapp.ramonma.online/api/health
   ```
   A resposta deve ser `200` e o certificado apresentado precisa ser o **Cloudflare Origin**.
 
