@@ -1,57 +1,97 @@
 # Financeito – Guia Rápido
 
-## 1) Pré-requisitos
+## 1) Cloudflare – Registro A
+1. Acesse o painel do Cloudflare e selecione a zona do domínio.
+2. Em **DNS**, clique em **Add record** e escolha **Type A**.
+3. Use **Name** `financeapp` e informe o IP público do TrueNAS em **IPv4 address**.
+4. Em **Proxy Status**, clique para alternar:
+   - **Proxied** (ícone laranja) ativa o proxy da Cloudflare.
+   - **DNS only** (ícone cinza) envia tráfego direto ao servidor.
+
+## 2) Pré-requisitos
 - TrueNAS SCALE 25.04
-- DNS no Cloudflare (subdomínio `financeapp.ramonma.online` -> Proxy **laranja**)
+- Registro A configurado conforme acima
 - Certificado **Cloudflare Origin** exportado como `origin.crt` e `origin.key`
 - Variáveis do `.env` preenchidas
 
-## 2) Copiar projeto para o TrueNAS (Shell)
+## 3) Criar datasets no TrueNAS e abrir Shell
+1. Na GUI do TrueNAS, navegue em **Storage → Pools → dados → Add Dataset** e crie:
+   - `financeito`
+   - `financeito/app`
+   - `financeito/tls`
+   - `financeito/backups`
+2. Use o botão **Shell** no topo da interface para abrir um terminal no host.
+
+## 4) Copiar projeto para o TrueNAS (Shell)
 ```bash
 mkdir -p /mnt/dados/financeito/app && cd /mnt/dados/financeito/app
 # Envie o zip para esta pasta e extraia:
 # unzip financeito-project.zip -d .
 ```
 
-## 3) TLS (arquivos)
+## 5) TLS (arquivos)
 Coloque:
 ```
 /mnt/dados/financeito/tls/origin.crt
 /mnt/dados/financeito/tls/origin.key
 ```
 
-## 4) Criar o .env
+## 6) Criar o .env
 ```bash
 cd /mnt/dados/financeito/app
 cp .env.example .env
 nano .env
 ```
-
 No arquivo `.env`, defina `ENCRYPTION_KEY_BASE64` com uma chave de 32 bytes codificada em Base64 para criptografia dos dados sensíveis.
 
-## 5) Subir containers
+### Variáveis Pluggy
+- `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET`: credenciais do painel Pluggy.
+- `PLUGGY_BASE_URL` e `PLUGGY_ENV`: ajuste conforme o ambiente desejado.
+
+### Variáveis Google (backups)
+- `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64`: conteúdo do JSON da conta de serviço codificado em Base64.
+- `GDRIVE_BACKUP_FOLDER_ID`: ID da pasta de destino no Google Drive.
+
+### Variáveis SMTP
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`: parâmetros do servidor de e‑mail.
+- `SMTP_USER` e `SMTP_PASS`: credenciais de autenticação.
+- `SMTP_FROM`: endereço do remetente exibido nas mensagens.
+
+## 7) Subir containers
 ```bash
 docker compose build
 docker compose up -d db web
 docker compose exec web npx prisma migrate deploy
 ```
 
-## 6) Proxy externo (Nginx/Cloudflare)
+## 8) Proxy externo (Nginx/Cloudflare)
 - No `.env`, `PUBLIC_BASE_URL` deve usar `https://`.
 - Configure o proxy apontando para `http://localhost:3000` (container `web`).
-- Certifique-se de encaminhar os cabeçalhos `Host`, `X-Real-IP`, `X-Forwarded-For` e `X-Forwarded-Proto`.
+- Encaminhe os cabeçalhos `Host`, `X-Real-IP`, `X-Forwarded-For` e `X-Forwarded-Proto`.
 - Se utilizar Nginx, copie `nginx.conf` para `/etc/nginx/nginx.conf` no servidor host e reinicie o serviço.
 
-## 7) Testes
-- HTTPS: `https://financeapp.ramonma.online/healthz` deve retornar `200`
-- SMTP: `docker compose exec web node -e "require('./lib/mailer').sendTest(process.env.SMTP_USER).then(console.log).catch(console.error)"`
-- Backup manual: `docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh`
+## 9) Backup, restauração e verificação do TLS
+- **Backup manual**
+  ```bash
+  docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh
+  ```
+  O arquivo gerado é enviado ao Google Drive e mantido por `BACKUP_RETENTION_DAYS`.
+- **Restauração**
+  Baixe um `.tar.gz` do Drive para `/mnt/dados/financeito/backups` e execute:
+  ```bash
+  docker compose exec backup sh /app/scripts/restore.sh /backups/NOME_DO_ARQUIVO.tar.gz
+  ```
+- **Verificar TLS**
+  ```bash
+  curl -I https://financeapp.ramonma.online/healthz
+  ```
+  A resposta deve ser `200` e o certificado apresentado precisa ser o **Cloudflare Origin**.
 
-## 8) Pluggy (Open Finance)
+## 10) Testes
+- SMTP:
+  ```bash
+  docker compose exec web node -e "require('./lib/mailer').sendTest(process.env.SMTP_USER).then(console.log).catch(console.error)"
+  ```
+
+## 11) Pluggy (Open Finance)
 No Dashboard clique **Conectar Conta** e conclua o fluxo do Pluggy Connect.
-
-## 9) Restore
-Baixe um `.tar.gz` da pasta do Drive para `/mnt/dados/financeito/backups` e depois:
-```bash
-docker compose exec backup sh /app/scripts/restore.sh /backups/NOME_DO_ARQUIVO.tar.gz
-```
