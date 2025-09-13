@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { BudgetForm } from '@/components/forms/budget-form'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 
 interface Budget {
@@ -30,6 +31,8 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
+  const [deletingBudget, setDeletingBudget] = useState<string | null>(null)
 
   useEffect(() => {
     loadBudgets()
@@ -46,6 +49,59 @@ export default function BudgetPage() {
       console.error('Erro ao carregar orçamentos:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCreateBudget(budgetData: any) {
+    try {
+      const res = await fetch('/api/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(budgetData)
+      })
+      
+      if (res.ok) {
+        const newBudget = await res.json()
+        setBudgets(prev => [newBudget, ...prev])
+        setShowCreateForm(false)
+      }
+    } catch (error) {
+      console.error('Erro ao criar orçamento:', error)
+    }
+  }
+
+  async function handleEditBudget(budgetData: any) {
+    if (!editingBudget) return
+    
+    try {
+      const res = await fetch(`/api/budget/${editingBudget.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(budgetData)
+      })
+      
+      if (res.ok) {
+        const updatedBudget = await res.json()
+        setBudgets(prev => prev.map(b => b.id === editingBudget.id ? updatedBudget : b))
+        setEditingBudget(null)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar orçamento:', error)
+    }
+  }
+
+  async function handleDeleteBudget(budgetId: string) {
+    try {
+      const res = await fetch(`/api/budget/${budgetId}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        setBudgets(prev => prev.filter(b => b.id !== budgetId))
+        setDeletingBudget(null)
+      }
+    } catch (error) {
+      console.error('Erro ao deletar orçamento:', error)
     }
   }
 
@@ -216,11 +272,27 @@ export default function BudgetPage() {
                     <div key={budget.id} className="p-3 glass-effect rounded-lg">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-white text-sm">{budget.name}</span>
-                        {budget.isActive && (
-                          <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs border border-green-400/30">
-                            Ativo
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {budget.isActive && (
+                            <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs border border-green-400/30">
+                              Ativo
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setEditingBudget(budget)}
+                            className="text-blue-400 hover:text-blue-300 text-xs"
+                            title="Editar"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => setDeletingBudget(budget.id)}
+                            className="text-red-400 hover:text-red-300 text-xs"
+                            title="Excluir"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-slate-400">{budget.currency} {budget.totalAmount.toFixed(2)}</p>
                       <p className="text-xs text-slate-400">{budget.period}</p>
@@ -254,15 +326,44 @@ export default function BudgetPage() {
         </div>
       )}
 
-      {/* Create Budget Modal - Placeholder for now */}
+      {/* Budget Forms */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateForm(false)}>
-          <LiquidCard className="max-w-md w-full m-4" onClick={() => {}}>
-            <h3 className="text-xl font-semibold mb-4 text-white">Criar Novo Orçamento</h3>
-            <p className="text-slate-400 mb-4">Funcionalidade em desenvolvimento...</p>
-            <LiquidButton variant="secondary" onClick={() => setShowCreateForm(false)}>
-              Fechar
-            </LiquidButton>
+        <BudgetForm
+          onSubmit={handleCreateBudget}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {editingBudget && (
+        <BudgetForm
+          budget={editingBudget}
+          onSubmit={handleEditBudget}
+          onCancel={() => setEditingBudget(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingBudget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <LiquidCard className="max-w-md w-full m-4">
+            <h3 className="text-xl font-semibold mb-4 text-white">Confirmar Exclusão</h3>
+            <p className="text-slate-400 mb-6">Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3">
+              <LiquidButton 
+                variant="secondary" 
+                onClick={() => setDeletingBudget(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </LiquidButton>
+              <LiquidButton 
+                variant="primary" 
+                onClick={() => handleDeleteBudget(deletingBudget)}
+                className="flex-1 bg-red-500 hover:bg-red-600"
+              >
+                Excluir
+              </LiquidButton>
+            </div>
           </LiquidCard>
         </div>
       )}

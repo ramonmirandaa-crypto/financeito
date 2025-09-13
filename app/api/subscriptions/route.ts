@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         billingCycle,
         nextBilling: new Date(nextBilling),
         category,
-        autoRenew: autoRenew || true
+        autoRenew: autoRenew ?? true
       }
     })
 

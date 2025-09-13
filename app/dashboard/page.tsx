@@ -20,18 +20,52 @@ import { motion } from 'framer-motion'
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
+  const [budgets, setBudgets] = useState<any[]>([])
+  const [goals, setGoals] = useState<any[]>([])
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [loans, setLoans] = useState<any[]>([])
   const [sdkReady, setSdkReady] = useState(false)
 
   async function loadData() {
-    const r = await fetch('/api/pluggy/sync')
-    if (r.status === 401) {
-      window.location.href = '/login'
-      return
-    }
-    if (r.ok) {
-      const json = await r.json()
-      setAccounts((json.accounts || []).map((a: any) => ({ ...a, balance: Number(a.balance) })))
-      setTransactions((json.transactions || []).map((t: any) => ({ ...t, amount: Number(t.amount) })))
+    try {
+      // Load Pluggy data
+      const r = await fetch('/api/pluggy/sync')
+      if (r.status === 401) {
+        window.location.href = '/login'
+        return
+      }
+      if (r.ok) {
+        const json = await r.json()
+        setAccounts((json.accounts || []).map((a: any) => ({ ...a, balance: Number(a.balance) })))
+        setTransactions((json.transactions || []).map((t: any) => ({ ...t, amount: Number(t.amount) })))
+      }
+
+      // Load all finance data in parallel
+      const [budgetRes, goalsRes, subscriptionsRes, loansRes] = await Promise.all([
+        fetch('/api/budget'),
+        fetch('/api/goals'),
+        fetch('/api/subscriptions'),
+        fetch('/api/loans')
+      ])
+
+      if (budgetRes.ok) {
+        const budgetData = await budgetRes.json()
+        setBudgets(budgetData)
+      }
+      if (goalsRes.ok) {
+        const goalsData = await goalsRes.json()
+        setGoals(goalsData)
+      }
+      if (subscriptionsRes.ok) {
+        const subscriptionsData = await subscriptionsRes.json()
+        setSubscriptions(subscriptionsData)
+      }
+      if (loansRes.ok) {
+        const loansData = await loansRes.json()
+        setLoans(loansData)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
     }
   }
 
