@@ -12,11 +12,12 @@ interface LiquidCardProps {
 
 export const LiquidCard = React.forwardRef<HTMLDivElement, LiquidCardProps>(
   ({ className = '', style, variant = 'default', glowColor, children, onClick }, ref) => {
-    const baseClasses = 'glass-effect rounded-3xl p-6 relative overflow-hidden'
+    const baseClasses =
+      'bg-card-glass/60 border border-card-border/50 backdrop-blur-glass rounded-3xl p-6 relative overflow-hidden'
     const variantClasses = {
       default: '',
-      hoverable: 'glass-hover cursor-pointer',
-      interactive: 'glass-hover cursor-pointer'
+      hoverable: 'cursor-pointer transition-colors hover:bg-card-glass/70',
+      interactive: 'cursor-pointer transition-colors hover:bg-card-glass/70',
     }
 
     return (
@@ -38,7 +39,7 @@ export const LiquidCard = React.forwardRef<HTMLDivElement, LiquidCardProps>(
       >
         {/* Subtle animated background pattern */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-blue-400/30 to-purple-600/30 rounded-full blur-3xl floating-animation" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-primary/30 to-primary-glow/30 rounded-full blur-3xl animate-float" />
         </div>
         <div className="relative z-10">
           {children}

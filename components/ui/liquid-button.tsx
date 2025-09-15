@@ -14,13 +14,18 @@ interface LiquidButtonProps {
 
 export const LiquidButton = React.forwardRef<HTMLButtonElement, LiquidButtonProps>(
   ({ className = '', variant = 'primary', size = 'md', glowColor, children, onClick, disabled, type = 'button' }, ref) => {
-    const baseClasses = 'glass-effect font-medium transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed'
-    
+    const baseClasses =
+      'bg-card-glass/60 border border-card-border/50 backdrop-blur-glass font-medium transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed'
+
     const variantClasses = {
-      primary: 'bg-gradient-to-r from-blue-500/30 to-purple-600/30 hover:from-blue-500/40 hover:to-purple-600/40 text-white border-blue-400/30',
-      secondary: 'bg-white/10 hover:bg-white/20 text-slate-200 border-white/20',
-      outline: 'bg-transparent hover:bg-white/10 text-slate-300 border-white/30',
-      ghost: 'bg-transparent hover:bg-white/5 text-slate-300 border-transparent'
+      primary:
+        'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
+      secondary:
+        'bg-secondary text-secondary-foreground hover:bg-secondary-hover border-secondary',
+      outline:
+        'bg-transparent hover:bg-accent/20 text-foreground border-border',
+      ghost:
+        'bg-transparent hover:bg-accent/10 text-foreground border-transparent',
     }
     
     const sizeClasses = {
@@ -46,7 +51,7 @@ export const LiquidButton = React.forwardRef<HTMLButtonElement, LiquidButtonProp
         type={type}
       >
         {/* Animated background glow on hover */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary-glow/20 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <span className="relative z-10">{children}</span>
       </motion.button>
     )
