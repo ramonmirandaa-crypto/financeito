@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { LiquidInput } from '@/components/ui/liquid-input'
 
 interface Goal {
   id?: string
@@ -80,13 +81,13 @@ export function GoalForm({ goal, onSubmit, onCancel, loading }: GoalFormProps) {
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Título da Meta *
               </label>
-              <input
+              <LiquidInput
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Ex: Comprar um carro"
                 required
+                className="focus:ring-2 focus:ring-green-500"
               />
             </div>
 
@@ -110,14 +111,14 @@ export function GoalForm({ goal, onSubmit, onCancel, loading }: GoalFormProps) {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Valor da Meta *
                 </label>
-                <input
+                <LiquidInput
                   type="number"
                   step="0.01"
                   value={formData.targetAmount}
                   onChange={(e) => setFormData(prev => ({ ...prev, targetAmount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="0,00"
                   required
+                  className="focus:ring-2 focus:ring-green-500"
                 />
               </div>
 
@@ -142,13 +143,13 @@ export function GoalForm({ goal, onSubmit, onCancel, loading }: GoalFormProps) {
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Valor Atual (já poupado)
               </label>
-              <input
+              <LiquidInput
                 type="number"
                 step="0.01"
                 value={formData.currentAmount}
                 onChange={(e) => setFormData(prev => ({ ...prev, currentAmount: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="0,00"
+                className="focus:ring-2 focus:ring-green-500"
               />
               {formData.targetAmount > 0 && (
                 <div className="mt-2">
@@ -171,12 +172,12 @@ export function GoalForm({ goal, onSubmit, onCancel, loading }: GoalFormProps) {
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Data da Meta *
               </label>
-              <input
+              <LiquidInput
                 type="date"
                 value={formData.targetDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, targetDate: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 required
+                className="focus:ring-2 focus:ring-green-500"
               />
             </div>
 

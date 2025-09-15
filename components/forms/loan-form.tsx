@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { LiquidInput } from '@/components/ui/liquid-input'
 
 interface Loan {
   id?: string
@@ -120,13 +121,13 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Título do Empréstimo *
               </label>
-              <input
+              <LiquidInput
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 placeholder={isLending ? "Ex: Empréstimo para João" : "Ex: Empréstimo da Maria"}
                 required
+                className="focus:ring-2 focus:ring-yellow-500"
               />
             </div>
 
@@ -150,14 +151,14 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Valor *
                 </label>
-                <input
+                <LiquidInput
                   type="number"
                   step="0.01"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   placeholder="0,00"
                   required
+                  className="focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
 
@@ -183,13 +184,13 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   {isLending ? 'Nome de quem recebeu *' : 'Nome de quem emprestou *'}
                 </label>
-                <input
+                <LiquidInput
                   type="text"
                   value={formData.lenderName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lenderName: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   placeholder="Nome completo"
                   required
+                  className="focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
 
@@ -197,12 +198,12 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Contato
                 </label>
-                <input
+                <LiquidInput
                   type="text"
                   value={formData.lenderContact}
                   onChange={(e) => setFormData(prev => ({ ...prev, lenderContact: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   placeholder="Telefone ou email"
+                  className="focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
             </div>
@@ -213,13 +214,13 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Taxa de Juros (% a.a.)
                 </label>
-                <input
+                <LiquidInput
                   type="number"
                   step="0.01"
                   value={formData.interestRate}
                   onChange={(e) => setFormData(prev => ({ ...prev, interestRate: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   placeholder="0,00"
+                  className="focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
 
@@ -227,11 +228,11 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Data de Vencimento
                 </label>
-                <input
+                <LiquidInput
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
             </div>
