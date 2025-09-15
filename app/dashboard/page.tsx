@@ -18,6 +18,7 @@ import {
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { motion } from 'framer-motion'
+import { chartColors } from '@/lib/theme'
 
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
@@ -125,7 +126,6 @@ export default function Dashboard() {
     connect.init()
   }
 
-  const colors = ['#8884d8', '#82ca9d', '#ffc658', '#d0ed57', '#8dd1e1']
 
   const balanceData = transactions
     .slice()
@@ -158,11 +158,11 @@ export default function Dashboard() {
           <div className="mb-4" style={{ width: '100%', height: 200 }}>
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
-                  {accounts.map((_, i) => (
-                    <Cell key={i} fill={colors[i % colors.length]} />
-                  ))}
-                </Pie>
+                  <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
+                    {accounts.map((_, i) => (
+                      <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                    ))}
+                  </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
@@ -191,7 +191,7 @@ export default function Dashboard() {
                 />
                 <YAxis />
                 <Tooltip labelFormatter={(d) => new Date(d).toLocaleDateString()} />
-                <Bar dataKey="amount" fill="#8884d8" />
+                  <Bar dataKey="amount" fill={chartColors[0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -212,7 +212,7 @@ export default function Dashboard() {
                 <XAxis dataKey="date" tickFormatter={(d) => new Date(d).toLocaleDateString()} />
                 <YAxis />
                 <Tooltip labelFormatter={(d) => new Date(d).toLocaleDateString()} />
-                <Line type="monotone" dataKey="balance" stroke="#82ca9d" />
+                  <Line type="monotone" dataKey="balance" stroke={chartColors[1]} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -225,11 +225,11 @@ export default function Dashboard() {
           <div style={{ width: '100%', height: 200 }}>
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
-                  {categoryData.map((_, i) => (
-                    <Cell key={i} fill={colors[i % colors.length]} />
-                  ))}
-                </Pie>
+                  <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
+                    {categoryData.map((_, i) => (
+                      <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                    ))}
+                  </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>

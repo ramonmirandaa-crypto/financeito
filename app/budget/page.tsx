@@ -7,6 +7,7 @@ import { LiquidButton } from '@/components/ui/liquid-button'
 import { BudgetForm } from '@/components/forms/budget-form'
 import { Budget, BudgetItem } from '@/types/budget'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
+import { chartColors } from '@/lib/theme'
 
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -86,7 +87,6 @@ export default function BudgetPage() {
     }
   }
 
-  const colors = ['#8884d8', '#82ca9d', '#ffc658', '#d0ed57', '#8dd1e1', '#ff7c7c']
 
   const activeBudget = budgets.find(b => b.isActive)
 
@@ -175,7 +175,7 @@ export default function BudgetPage() {
                             outerRadius={80}
                           >
                             {activeBudget.items.map((_, i) => (
-                              <Cell key={i} fill={colors[i % colors.length]} />
+                              <Cell key={i} fill={chartColors[i % chartColors.length]} />
                             ))}
                           </Pie>
                           <Tooltip formatter={(value: any, name: any, props: any) => [
