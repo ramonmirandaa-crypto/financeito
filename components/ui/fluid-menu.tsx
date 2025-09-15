@@ -75,45 +75,44 @@ export function MenuItem({
     }
   }
 
-  // Cálculo da posição para distribuir os itens em círculo
-  const totalItems = 5 // 5 itens de navegação
-  const angle = isMainButton ? 0 : (index - 1) * (360 / totalItems) // Distribui os 5 itens
-  const radius = 80 // Raio do círculo
-  const x = Math.cos((angle - 90) * (Math.PI / 180)) * radius
-  const y = Math.sin((angle - 90) * (Math.PI / 180)) * radius
+  // Cálculo da posição para distribuir os itens verticalmente
+  const itemSpacing = 60 // Espaçamento entre itens
+  const x = 0 // Sem deslocamento horizontal
+  const y = isMainButton ? 0 : index * itemSpacing // Distribui verticalmente
 
   const buttonElement = (
     <button
       onClick={handleClick}
-      className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-xl border border-card-glass/20 shadow-lg bg-card-glass/30 hover:bg-card-glass/50 ${
+      className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border border-white/20 shadow-lg ${
         isMainButton 
-          ? "w-16 h-16 bg-card-glass/40 hover:bg-card-glass/60 shadow-xl" 
-          : "w-12 h-12"
+          ? "w-16 h-16 bg-white/10 hover:bg-white/20 shadow-2xl border-white/30" 
+          : "w-12 h-12 bg-white/5 hover:bg-white/15 border-white/10"
       } ${
-        isActive && !isMainButton ? "bg-primary/20 border-primary/40 shadow-primary/20" : ""
+        isActive && !isMainButton ? "bg-white/20 border-white/40 shadow-white/20" : ""
       } ${
         className || ""
       }`}
       style={{
         transform: !isMainButton && isExpanded 
-          ? `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` 
+          ? `translate(-50%, ${y}px)` 
           : !isMainButton 
-            ? "translate(-50%, -50%) scale(0)" 
+            ? "translate(-50%, 0px) scale(0)" 
             : undefined,
         opacity: isMainButton ? 1 : isExpanded ? 1 : 0,
         transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         left: !isMainButton ? "50%" : undefined,
-        top: !isMainButton ? "50%" : undefined
+        top: !isMainButton ? "50%" : undefined,
+        pointerEvents: !isMainButton && !isExpanded ? "none" : undefined
       }}
       title={label}
     >
-      <div className="text-slate-200 hover:text-white transition-colors duration-200">
+      <div className="text-white/70 hover:text-white transition-colors duration-200">
         {icon}
       </div>
       
       {/* Indicador de item ativo */}
       {isActive && !isMainButton && (
-        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
+        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-gray-900/50" />
       )}
     </button>
   )
@@ -122,32 +121,49 @@ export function MenuItem({
     return (
       <Link 
         href={href} 
-        className={`absolute flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-xl border border-card-glass/20 shadow-lg bg-card-glass/30 hover:bg-card-glass/50 w-12 h-12 ${
-          isActive ? "bg-primary/20 border-primary/40 shadow-primary/20" : ""
-        }`}
+        className={`absolute flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border w-12 h-12 ${
+          isActive ? "bg-white/20 border-white/40 shadow-white/20" : "bg-white/5 hover:bg-white/15 border-white/10"
+        } shadow-lg`}
         onClick={() => setIsExpanded(false)}
         style={{
           transform: isExpanded 
-            ? `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` 
-            : "translate(-50%, -50%) scale(0)",
+            ? `translate(-50%, ${y}px)` 
+            : "translate(-50%, 0px) scale(0)",
           opacity: isExpanded ? 1 : 0,
           transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
           left: "50%",
-          top: "50%"
+          top: "50%",
+          pointerEvents: !isExpanded ? "none" : undefined
         }}
         title={label}
       >
-        <div className="text-slate-200 hover:text-white transition-colors duration-200">
+        <div className="text-white/70 hover:text-white transition-colors duration-200">
           {icon}
         </div>
         
         {/* Indicador de item ativo */}
         {isActive && (
-          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
+          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-gray-900/50" />
         )}
       </Link>
     )
   }
 
-  return <div className={isMainButton ? "" : "absolute"}>{buttonElement}</div>
+  return (
+    <div 
+      className={isMainButton ? "" : "absolute"}
+      style={!isMainButton ? {
+        left: "50%",
+        top: "50%",
+        transform: isExpanded 
+          ? `translate(-50%, ${y}px)` 
+          : "translate(-50%, 0px) scale(0)",
+        opacity: isExpanded ? 1 : 0,
+        transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+        pointerEvents: !isExpanded ? "none" : undefined
+      } : undefined}
+    >
+      {buttonElement}
+    </div>
+  )
 }

@@ -24,7 +24,7 @@ export default function FluidSidebar() {
     <div className="fixed top-8 left-8 z-50">
       <div className="relative">
         {/* Efeito de background blur */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent dark:from-primary/20 blur-3xl -z-10 rounded-full scale-150" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent blur-3xl -z-10 rounded-full scale-150" />
         
         <MenuContainer>
           {/* Botão principal com ícone que muda */}
