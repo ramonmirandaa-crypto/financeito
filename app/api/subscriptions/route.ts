@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyJWT } from '@/lib/auth'
+import { getAuthSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('session')?.value
-    if (!token) {
+    const session = await getAuthSession()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const payload = verifyJWT(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
-    }
-
     const subscriptions = await prisma.subscription.findMany({
-      where: { userId: payload.userId },
+      where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' }
     })
 
@@ -34,14 +29,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('session')?.value
-    if (!token) {
+    const session = await getAuthSession()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-
-    const payload = verifyJWT(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
     }
 
     const data = await request.json()
@@ -55,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Create subscription
     const subscription = await prisma.subscription.create({
       data: {
-        userId: payload.userId,
+        userId: session.user.id,
         name,
         description,
         amount: Number(amount),

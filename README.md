@@ -2,7 +2,7 @@
 
 ## Recursos Suportados
 
-- Autenticação de usuários com suporte a 2FA.
+- Autenticação de usuários via NextAuth.
 - Conexão de contas bancárias via Pluggy.
 - Sincronização e listagem de transações.
 - Recursos como orçamento, metas, assinaturas, recorrências e empréstimos familiares ainda não estão disponíveis.
