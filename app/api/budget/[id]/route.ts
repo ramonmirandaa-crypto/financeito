@@ -13,6 +13,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const data = await request.json()
     const { name, totalAmount, items } = data
 
+    let totalAmountNumber: number | undefined
+    if (totalAmount !== undefined) {
+      totalAmountNumber = Number(totalAmount)
+      if (Number.isNaN(totalAmountNumber)) {
+        return NextResponse.json({ error: 'Campo totalAmount inválido' }, { status: 400 })
+      }
+    }
+
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        const itemAmount = Number(item.amount)
+        if (Number.isNaN(itemAmount)) {
+          return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
+        }
+        if (item.spent !== undefined) {
+          const itemSpent = Number(item.spent)
+          if (Number.isNaN(itemSpent)) {
+            return NextResponse.json({ error: 'Campo spent inválido' }, { status: 400 })
+          }
+        }
+      }
+    }
+
     // Verify budget belongs to user
     const existingBudget = await prisma.budget.findFirst({
       where: { id, userId: session.user.id },
@@ -30,7 +53,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         where: { id },
         data: {
           name: name || existingBudget.name,
-          totalAmount: totalAmount ? Number(totalAmount) : existingBudget.totalAmount
+          totalAmount: totalAmount ? totalAmountNumber! : existingBudget.totalAmount
         }
       })
 

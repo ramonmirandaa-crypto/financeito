@@ -50,12 +50,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 })
     }
 
+    const totalAmountNumber = Number(totalAmount)
+    if (Number.isNaN(totalAmountNumber)) {
+      return NextResponse.json({ error: 'Campo totalAmount inválido' }, { status: 400 })
+    }
+
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        const itemAmount = Number(item.amount)
+        if (Number.isNaN(itemAmount)) {
+          return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
+        }
+      }
+    }
+
     // Create budget
     const budget = await prisma.budget.create({
       data: {
         userId: session.user.id,
         name,
-        totalAmount: Number(totalAmount),
+        totalAmount: totalAmountNumber,
         currency: currency || 'BRL',
         period,
         startDate: new Date(startDate),

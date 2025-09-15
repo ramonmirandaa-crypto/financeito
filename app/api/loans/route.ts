@@ -48,18 +48,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo de empréstimo inválido' }, { status: 400 })
     }
 
+    const amountNumber = Number(amount)
+    if (Number.isNaN(amountNumber)) {
+      return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
+    }
+
+    let interestRateNumber: number | null = null
+    if (interestRate !== undefined && interestRate !== null) {
+      interestRateNumber = Number(interestRate)
+      if (Number.isNaN(interestRateNumber)) {
+        return NextResponse.json({ error: 'Campo interestRate inválido' }, { status: 400 })
+      }
+    }
+
     // Create loan
     const loan = await prisma.loan.create({
       data: {
         userId: session.user.id,
         title,
         description,
-        amount: Number(amount),
+        amount: amountNumber,
         currency: currency || 'BRL',
         lenderName,
         lenderContact,
         type,
-        interestRate: interestRate ? Number(interestRate) : null,
+        interestRate: interestRateNumber,
         dueDate: dueDate ? new Date(dueDate) : null
       }
     })

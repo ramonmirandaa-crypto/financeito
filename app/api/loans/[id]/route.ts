@@ -12,6 +12,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const id = params.id
     const data = await request.json()
 
+    let amountNumber: number | undefined
+    if (data.amount !== undefined) {
+      amountNumber = Number(data.amount)
+      if (Number.isNaN(amountNumber)) {
+        return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
+      }
+    }
+
+    let interestRateNumber: number | undefined
+    if (data.interestRate !== undefined) {
+      interestRateNumber = Number(data.interestRate)
+      if (Number.isNaN(interestRateNumber)) {
+        return NextResponse.json({ error: 'Campo interestRate inválido' }, { status: 400 })
+      }
+    }
+
     // Verify loan belongs to user
     const existingLoan = await prisma.loan.findFirst({
       where: { id, userId: session.user.id }
@@ -26,8 +42,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id },
       data: {
         ...data,
-        amount: data.amount ? Number(data.amount) : undefined,
-        interestRate: data.interestRate ? Number(data.interestRate) : undefined,
+        amount: amountNumber,
+        interestRate: interestRateNumber,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         paidAt: data.isPaid && !existingLoan.isPaid ? new Date() : data.isPaid === false ? null : undefined
       }

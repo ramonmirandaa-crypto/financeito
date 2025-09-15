@@ -42,13 +42,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 })
     }
 
+    const amountNumber = Number(amount)
+    if (Number.isNaN(amountNumber)) {
+      return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
+    }
+
     // Create subscription
     const subscription = await prisma.subscription.create({
       data: {
         userId: session.user.id,
         name,
         description,
-        amount: Number(amount),
+        amount: amountNumber,
         currency: currency || 'BRL',
         billingCycle,
         nextBilling: new Date(nextBilling),
