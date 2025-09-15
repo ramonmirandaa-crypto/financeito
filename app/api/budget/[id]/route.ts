@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyJWT } from '@/lib/auth'
+import { getAuthSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const token = request.cookies.get('session')?.value
-    if (!token) {
+    const session = await getAuthSession()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-
-    const payload = verifyJWT(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
     }
 
     const id = params.id
@@ -20,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Verify budget belongs to user
     const existingBudget = await prisma.budget.findFirst({
-      where: { id, userId: payload.userId },
+      where: { id, userId: session.user.id },
       include: { items: true }
     })
 
@@ -87,21 +82,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const token = request.cookies.get('session')?.value
-    if (!token) {
+    const session = await getAuthSession()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-
-    const payload = verifyJWT(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
     }
 
     const id = params.id
 
     // Verify budget belongs to user
     const existingBudget = await prisma.budget.findFirst({
-      where: { id, userId: payload.userId }
+      where: { id, userId: session.user.id }
     })
 
     if (!existingBudget) {
