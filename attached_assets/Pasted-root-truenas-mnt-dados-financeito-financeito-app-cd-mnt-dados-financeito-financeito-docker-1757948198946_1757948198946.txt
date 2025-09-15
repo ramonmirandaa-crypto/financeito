@@ -1,0 +1,57 @@
+root@truenas[/mnt/dados/financeito/financeito/app]# cd /mnt/dados/financeito/financeito && \
+docker-compose down && \
+git stash push -m "Config servidor" .env.local && \
+git pull origin main && \
+git stash pop && \
+docker-compose build --no-cache && \
+docker-compose up -d && \
+echo "=== STATUS ===" && \
+docker-compose ps && \
+echo "=== TESTANDO ===" && \
+sleep 10 && curl -I http://localhost:5000
+zsh: command not found: docker-compose
+root@truenas[/mnt/dados/financeito/financeito]# echo "=== DOCKER INFO ==="
+docker --version
+docker info 2>/dev/null | head -10
+
+echo -e "\n=== DOCKER COMPOSE ==="
+docker compose version 2>/dev/null || echo "docker compose não disponível"
+docker-compose --version 2>/dev/null || echo "docker-compose não disponível"
+
+echo -e "\n=== ARQUIVOS DOCKER ==="
+ls -la | grep -i docker
+
+echo -e "\n=== CONTAINERS ATUAIS ==="
+docker ps -a | grep financeito
+
+echo -e "\n=== IMAGENS ==="
+docker images | grep financeito
+=== DOCKER INFO ===
+Docker version 27.5.0, build a187fa5
+Client: Docker Engine - Community
+ Version:    27.5.0
+ Context:    default
+ Debug Mode: false
+ Plugins:
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.19.3
+    Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.32.3
+
+=== DOCKER COMPOSE ===
+Docker Compose version v2.32.3
+docker-compose não disponível
+
+=== ARQUIVOS DOCKER ===
+-rw-r--r--  1 root root    781 Sep 15 02:16 Dockerfile
+-rw-r--r--  1 root root   1011 Sep 15 01:20 docker-compose.yml
+
+=== CONTAINERS ATUAIS ===
+8b629cb4060e   financeito-web                                                                         "docker-entrypoint.s…"   6 hours ago    Up 6 hours                0.0.0.0:5000->5000/tcp, :::5000->5000/tcp                     financeito-web
+fc466c67ac6b   postgres:16                                                                            "docker-entrypoint.s…"   8 hours ago    Up 8 hours (healthy)      5432/tcp                                                      financeito-db
+
+=== IMAGENS ===
+financeito-web                             latest                                                                    67262bdc25ad   6 hours ago     947MB
+financeito-backup                          latest                                                                    f11b681a4ffb   10 hours ago    1.33GB
+root@truenas[/mnt/dados/financeito/financeito]# 
