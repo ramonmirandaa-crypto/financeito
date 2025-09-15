@@ -18,7 +18,6 @@ import {
 } from 'recharts'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
-import { LiquidButton as NewLiquidButton, MetalButton } from '@/components/ui/liquid-glass-button'
 import { motion } from 'framer-motion'
 import { chartColors } from '@/lib/theme'
 import { QuickAccess, QuickAccessItem } from '@/components/quick-access'
@@ -527,58 +526,7 @@ export default function Dashboard() {
         </LiquidCard>
       </motion.div>
 
-      {/* Seção de Teste dos Novos Componentes */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <LiquidCard>
-          <h2 className="text-xl font-semibold mb-4">🎨 Novos Componentes - Liquid Glass</h2>
-          <div className="space-y-6">
-            
-            {/* Liquid Buttons */}
-            <div>
-              <h3 className="text-lg font-medium mb-3">LiquidButton</h3>
-              <div className="flex flex-wrap gap-4">
-                <NewLiquidButton size="sm">Small</NewLiquidButton>
-                <NewLiquidButton size="default">Default</NewLiquidButton>
-                <NewLiquidButton size="lg">Large</NewLiquidButton>
-                <NewLiquidButton size="xl">Extra Large</NewLiquidButton>
-                <NewLiquidButton size="xxl">XXL Size</NewLiquidButton>
-              </div>
-            </div>
-
-            {/* Metal Buttons */}
-            <div>
-              <h3 className="text-lg font-medium mb-3">MetalButton Variants</h3>
-              <div className="flex flex-wrap gap-4">
-                <MetalButton variant="default">Default</MetalButton>
-                <MetalButton variant="primary">Primary</MetalButton>
-                <MetalButton variant="success">Success</MetalButton>
-                <MetalButton variant="error">Error</MetalButton>
-                <MetalButton variant="gold">Gold</MetalButton>
-                <MetalButton variant="bronze">Bronze</MetalButton>
-              </div>
-            </div>
-
-            {/* Botões Interativos */}
-            <div>
-              <h3 className="text-lg font-medium mb-3">Botões Interativos</h3>
-              <div className="flex flex-wrap gap-4">
-                <NewLiquidButton 
-                  onClick={() => toast.success('LiquidButton clicado!')}
-                >
-                  Testar Toast
-                </NewLiquidButton>
-                <MetalButton 
-                  variant="primary"
-                  onClick={() => console.log('MetalButton clicado!')}
-                >
-                  Console Log
-                </MetalButton>
-              </div>
-            </div>
-
-          </div>
-        </LiquidCard>
-      </motion.div>
+      {/* Novos componentes liquid glass disponíveis em components/ui/liquid-glass-button.tsx */}
       </div>
     </motion.div>
   )
