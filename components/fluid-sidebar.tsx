@@ -30,6 +30,7 @@ export default function FluidSidebar() {
           {/* Botão principal com ícone que muda */}
           <MenuItem
             isMainButton
+            label="Menu de navegação"
             icon={
               <div className="relative w-6 h-6">
                 <div className="absolute inset-0 transition-all duration-500 ease-in-out origin-center opacity-100 scale-100 rotate-0 [div[data-expanded=true]_&]:opacity-0 [div[data-expanded=true]_&]:scale-0 [div[data-expanded=true]_&]:rotate-180">

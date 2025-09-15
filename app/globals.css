@@ -219,6 +219,49 @@
   .backdrop-blur-subtle {
     backdrop-filter: blur(8px) saturate(1.1);
   }
+
+  /* Accessibility - Focus styles with better visibility */
+  .focus-ring {
+    @apply focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none;
+  }
+
+  .focus-ring-destructive {
+    @apply focus-visible:ring-4 focus-visible:ring-destructive/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none;
+  }
+
+  .focus-ring-success {
+    @apply focus-visible:ring-4 focus-visible:ring-success/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none;
+  }
+
+  .focus-ring-warning {
+    @apply focus-visible:ring-4 focus-visible:ring-warning/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .high-contrast-border {
+      border-width: 2px !important;
+    }
+    
+    .high-contrast-text {
+      color: hsl(var(--foreground)) !important;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .motion-reduce {
+      animation: none !important;
+      transition: none !important;
+    }
+    
+    /* Aplicar automaticamente a elementos que usam transições/animações */
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @keyframes float {

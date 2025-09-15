@@ -32,12 +32,13 @@ export function MenuContainer({ children, className }: MenuContainerProps) {
   
   return (
     <MenuContext.Provider value={{ isExpanded, setIsExpanded, activeHref: pathname }}>
-      <div 
+      <nav 
         className={`relative flex items-center justify-center ${className || ''}`}
         data-expanded={isExpanded}
+        aria-label="Menu principal de navegação"
       >
         {children}
-      </div>
+      </nav>
     </MenuContext.Provider>
   )
 }
@@ -48,7 +49,7 @@ interface MenuItemProps {
   onClick?: () => void
   className?: string
   index?: number
-  label?: string
+  label: string // Obrigatório para acessibilidade
   isMainButton?: boolean
 }
 
@@ -59,7 +60,7 @@ export function MenuItem({
   className, 
   index = 0, 
   label,
-  isMainButton = false 
+  isMainButton = false
 }: MenuItemProps) {
   const { isExpanded, setIsExpanded, activeHref } = useContext(MenuContext)
   const isActive = href && activeHref === href
@@ -75,6 +76,28 @@ export function MenuItem({
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+      case ' ': // Espaço
+        e.preventDefault()
+        handleClick()
+        break
+      case 'Escape':
+        if (isExpanded && !isMainButton) {
+          e.preventDefault()
+          setIsExpanded(false)
+        }
+        break
+      case 'Tab':
+        // Fecha o menu ao navegar por Tab para fora
+        if (isExpanded && !isMainButton) {
+          setIsExpanded(false)
+        }
+        break
+    }
+  }
+
   // Cálculo da posição para distribuir os itens verticalmente
   const itemSpacing = 60 // Espaçamento entre itens
   const x = 0 // Sem deslocamento horizontal
@@ -83,7 +106,8 @@ export function MenuItem({
   const buttonElement = (
     <button
       onClick={handleClick}
-      className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border border-white/20 shadow-lg ${
+      onKeyDown={handleKeyDown}
+      className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border border-white/20 shadow-lg focus-ring ${
         isMainButton 
           ? "w-16 h-16 bg-white/10 hover:bg-white/20 shadow-2xl border-white/30" 
           : "w-12 h-12 bg-white/5 hover:bg-white/15 border-white/10"
@@ -104,7 +128,10 @@ export function MenuItem({
         top: !isMainButton ? "50%" : undefined,
         pointerEvents: !isMainButton && !isExpanded ? "none" : undefined
       }}
-      title={label}
+      aria-hidden={!isMainButton && !isExpanded}
+      aria-label={label}
+      aria-expanded={isMainButton ? isExpanded : undefined}
+      tabIndex={!isMainButton && !isExpanded ? -1 : 0}
     >
       <div className="text-white/70 hover:text-white transition-colors duration-200">
         {icon}
@@ -121,10 +148,11 @@ export function MenuItem({
     return (
       <Link 
         href={href} 
-        className={`absolute flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border w-12 h-12 ${
+        className={`absolute flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border w-12 h-12 focus-ring ${
           isActive ? "bg-white/20 border-white/40 shadow-white/20" : "bg-white/5 hover:bg-white/15 border-white/10"
         } shadow-lg`}
         onClick={() => setIsExpanded(false)}
+        onKeyDown={handleKeyDown}
         style={{
           transform: isExpanded 
             ? `translate(-50%, ${y}px)` 
@@ -135,7 +163,9 @@ export function MenuItem({
           top: "50%",
           pointerEvents: !isExpanded ? "none" : undefined
         }}
-        title={label}
+        aria-label={label}
+        tabIndex={!isExpanded ? -1 : 0}
+        aria-hidden={!isExpanded}
       >
         <div className="text-white/70 hover:text-white transition-colors duration-200">
           {icon}
@@ -162,6 +192,7 @@ export function MenuItem({
         transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         pointerEvents: !isExpanded ? "none" : undefined
       } : undefined}
+      aria-hidden={!isMainButton && !isExpanded}
     >
       {buttonElement}
     </div>

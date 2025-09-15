@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 
 interface LiquidButtonProps {
   className?: string
@@ -10,12 +10,28 @@ interface LiquidButtonProps {
   onClick?: () => void
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
+  'aria-label'?: string
+  'aria-describedby'?: string
+  onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void
 }
 
 export const LiquidButton = React.forwardRef<HTMLButtonElement, LiquidButtonProps>(
-  ({ className = '', variant = 'primary', size = 'md', glowColor, children, onClick, disabled, type = 'button' }, ref) => {
+  ({ 
+    className = '', 
+    variant = 'primary', 
+    size = 'md', 
+    glowColor, 
+    children, 
+    onClick, 
+    disabled, 
+    type = 'button',
+    'aria-label': ariaLabel,
+    'aria-describedby': ariaDescribedby,
+    onKeyDown
+  }, ref) => {
+    const shouldReduceMotion = useReducedMotion()
     const baseClasses =
-      'bg-card-glass/60 border border-card-border/50 backdrop-blur-glass font-medium transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed'
+      'bg-card-glass/60 border border-card-border/50 backdrop-blur-glass font-medium transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed focus-ring'
 
     const variantClasses = {
       primary:
@@ -43,12 +59,15 @@ export const LiquidButton = React.forwardRef<HTMLButtonElement, LiquidButtonProp
             filter: `drop-shadow(0 0 12px ${glowColor}60)`
           })
         }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
+        whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+        whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
         onClick={onClick}
         disabled={disabled}
         type={type}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedby}
+        onKeyDown={onKeyDown}
       >
         {/* Animated background glow on hover */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary-glow/20 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
