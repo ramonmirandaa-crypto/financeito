@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { LiquidInput } from '@/components/ui/liquid-input'
 import { Budget, BudgetItem } from '@/types/budget'
 
 interface BudgetFormProps {
@@ -92,13 +93,13 @@ export function BudgetForm({ budget, onSubmit, onCancel, loading }: BudgetFormPr
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Nome do Orçamento
               </label>
-              <input
+              <LiquidInput
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Ex: Orçamento Dezembro 2024"
                 required
+                className="focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -137,26 +138,26 @@ export function BudgetForm({ budget, onSubmit, onCancel, loading }: BudgetFormPr
                     <div className="grid md:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">Nome</label>
-                        <input
+                        <LiquidInput
                           type="text"
                           value={item.name}
                           onChange={(e) => updateItem(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           placeholder="Ex: Alimentação"
                           required
+                          className="focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
 
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">Valor (R$)</label>
-                        <input
+                        <LiquidInput
                           type="number"
                           step="0.01"
                           value={item.amount}
                           onChange={(e) => updateItem(index, 'amount', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           placeholder="0,00"
                           required
+                          className="focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
 
@@ -188,13 +189,13 @@ export function BudgetForm({ budget, onSubmit, onCancel, loading }: BudgetFormPr
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Valor Total (R$)
               </label>
-              <input
+              <LiquidInput
                 type="number"
                 step="0.01"
                 value={formData.totalAmount}
                 onChange={(e) => setFormData(prev => ({ ...prev, totalAmount: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Deixe vazio para calcular automaticamente"
+                className="focus:ring-2 focus:ring-blue-500"
               />
               <p className="text-xs text-slate-400 mt-1">
                 Total calculado dos itens: R$ {formData.items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}

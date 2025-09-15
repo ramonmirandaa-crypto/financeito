@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { LiquidInput } from '@/components/ui/liquid-input'
 
 interface Subscription {
   id?: string
@@ -80,13 +81,13 @@ export function SubscriptionForm({ subscription, onSubmit, onCancel, loading }: 
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Nome do Serviço *
               </label>
-              <input
+              <LiquidInput
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Ex: Netflix, Spotify, Adobe Creative"
                 required
+                className="focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
@@ -95,12 +96,12 @@ export function SubscriptionForm({ subscription, onSubmit, onCancel, loading }: 
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Descrição
               </label>
-              <input
+              <LiquidInput
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Plano ou detalhes adicionais..."
+                className="focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
@@ -110,14 +111,14 @@ export function SubscriptionForm({ subscription, onSubmit, onCancel, loading }: 
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Valor *
                 </label>
-                <input
+                <LiquidInput
                   type="number"
                   step="0.01"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="0,00"
                   required
+                  className="focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -163,12 +164,12 @@ export function SubscriptionForm({ subscription, onSubmit, onCancel, loading }: 
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Próxima Cobrança *
               </label>
-              <input
+              <LiquidInput
                 type="date"
                 value={formData.nextBilling}
                 onChange={(e) => setFormData(prev => ({ ...prev, nextBilling: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 required
+                className="focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
