@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json prisma ./
 RUN npm ci || npm install
 COPY . .
+RUN mkdir -p public
 RUN npm run build
 
 # Runtime
