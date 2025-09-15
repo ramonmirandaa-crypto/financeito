@@ -12,7 +12,20 @@ export async function GET(request: NextRequest) {
     const budgets = await prisma.budget.findMany({
       where: { userId },
       include: {
-        items: true
+        items: {
+          select: {
+            id: true,
+            budgetId: true,
+            accountId: true,
+            name: true,
+            category: true,
+            amount: true,
+            spent: true,
+            currency: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -91,6 +104,7 @@ export async function POST(request: NextRequest) {
         isActive: true,
         items: {
           create: items?.map((item: any) => ({
+            name: item.name ?? item.category,
             category: item.category,
             amount: Number(item.amount),
             currency: item.currency || currency || 'BRL'
@@ -98,7 +112,20 @@ export async function POST(request: NextRequest) {
         }
       },
       include: {
-        items: true
+        items: {
+          select: {
+            id: true,
+            budgetId: true,
+            accountId: true,
+            name: true,
+            category: true,
+            amount: true,
+            spent: true,
+            currency: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        }
       }
     })
 

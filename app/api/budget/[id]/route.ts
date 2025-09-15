@@ -98,7 +98,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           await tx.budgetItem.createMany({
             data: items.map((item: any) => ({
               budgetId: id,
-              name: item.name,
+              name: item.name ?? item.category,
               amount: Number(item.amount),
               spent: Number(item.spent || 0),
               category: item.category,
@@ -111,7 +111,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       // Return updated budget with items
       return await tx.budget.findUnique({
         where: { id },
-        include: { items: true }
+        include: {
+          items: {
+            select: {
+              id: true,
+              budgetId: true,
+              accountId: true,
+              name: true,
+              category: true,
+              amount: true,
+              spent: true,
+              currency: true,
+              createdAt: true,
+              updatedAt: true
+            }
+          }
+        }
       })
     })
 
