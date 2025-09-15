@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listAccounts, listTransactions } from '@/lib/pluggy'
 import { encryptJSON, decryptJSON } from '@/lib/crypto'
-import { getAuthSession } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
-  const session = await getAuthSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { itemId } = await req.json()
   if (!itemId) return NextResponse.json({ error: 'itemId required' }, { status: 400 })
 
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     await prisma.bankAccount.upsert({
       where: { id: acc.id },
       update: {
-        userId: session.user.id,
+        userId,
         provider: 'pluggy',
         providerItem: itemId,
         name: acc.name,
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       },
       create: {
         id: acc.id,
-        userId: session.user.id,
+        userId,
         provider: 'pluggy',
         providerItem: itemId,
         name: acc.name,
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       where: { id: tx.id },
       update: {
         accountId: tx.accountId,
-        userId: session.user.id,
+        userId,
         description: tx.description,
         category: tx.category || null,
         currency: tx.currencyCode || tx.currency || 'BRL',
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       create: {
         id: tx.id,
         accountId: tx.accountId,
-        userId: session.user.id,
+        userId,
         description: tx.description,
         category: tx.category || null,
         currency: tx.currencyCode || tx.currency || 'BRL',
@@ -80,11 +80,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getAuthSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const accounts = await prisma.bankAccount.findMany({ where: { userId: session.user.id } })
+  const { userId: uid } = auth()
+  if (!uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const accounts = await prisma.bankAccount.findMany({ where: { userId: uid } })
   const transactions = await prisma.transaction.findMany({
-    where: { userId: session.user.id },
+    where: { userId: uid },
     orderBy: { date: 'desc' },
     take: 50,
   })

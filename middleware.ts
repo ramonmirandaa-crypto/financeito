@@ -1,21 +1,12 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
-  const { pathname } = req.nextUrl
+const isPublicRoute = createRouteMatcher(['/login', '/register', '/api/:path*'])
 
-  // Allow requests to next internal, api routes, or login/register pages
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
-  if (!token && !isAuthPage && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
-    const url = req.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-  return NextResponse.next()
-}
+export default clerkMiddleware((auth, req) => {
+  if (isPublicRoute(req)) return
+  auth().protect()
+})
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
