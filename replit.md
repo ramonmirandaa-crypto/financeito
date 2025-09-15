@@ -1,6 +1,6 @@
 # Overview
 
-Financeito is a personal finance management application built with Next.js and TypeScript. The system uses NextAuth for secure user authentication and integrates with the Pluggy API for Open Finance functionality, allowing users to connect their bank accounts and sync financial transactions. The application features a modern dark-themed UI with glassmorphism effects and data visualization through charts.
+Financeito is a personal finance management application built with Next.js 14 and TypeScript. The system features a completely modernized UI with liquid glass design inspired by 21st.dev, full Brazilian localization (pt-BR), and comprehensive WCAG accessibility compliance. It integrates with Pluggy API for Open Finance functionality, allowing users to connect bank accounts and sync financial transactions. The application now includes a professional toast notification system, redesigned dashboard with KPIs, and fluid vertical navigation menu.
 
 # User Preferences
 
