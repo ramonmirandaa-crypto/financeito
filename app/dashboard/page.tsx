@@ -29,6 +29,12 @@ import {
   isUpcoming,
   isOverdue 
 } from '@/lib/format-utils'
+import { KPISkeleton, CardSkeleton, TransactionSkeleton, ChartSkeleton } from '@/components/ui/skeleton'
+import { 
+  EmptyAccounts, 
+  EmptyTransactions, 
+  EmptyUpcomingPayments 
+} from '@/components/ui/empty-state'
 
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
@@ -38,10 +44,12 @@ export default function Dashboard() {
   const [subscriptions, setSubscriptions] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
   const [sdkReady, setSdkReady] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
 
   async function loadData() {
+    setLoading(true)
     try {
       // Load Pluggy data
       const r = await fetch('/api/pluggy/sync')
@@ -81,6 +89,8 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -233,45 +243,51 @@ export default function Dashboard() {
       animate={{ opacity: 1, y: 0 }}
     >
       {/* KPIs Principais */}
-      <motion.div 
-        className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <LiquidCard className="text-center">
-          <div className="text-2xl font-bold text-blue-400">
-            {formatCurrency(totalBalance)}
-          </div>
-          <div className="text-sm text-slate-400">Saldo Total</div>
-        </LiquidCard>
-        
-        <LiquidCard className="text-center">
-          <div className="text-2xl font-bold text-green-400">
-            {formatCurrency(monthlyIncome)}
-          </div>
-          <div className="text-sm text-slate-400">Receitas</div>
-        </LiquidCard>
-        
-        <LiquidCard className="text-center">
-          <div className="text-2xl font-bold text-red-400">
-            {formatCurrency(monthlyExpenses)}
-          </div>
-          <div className="text-sm text-slate-400">Despesas</div>
-        </LiquidCard>
-        
-        <LiquidCard className="text-center">
-          <div className={`text-2xl font-bold ${
-            monthlyResult >= 0 ? 'text-green-400' : 'text-red-400'
-          }`}>
-            {formatCurrencyWithSign(monthlyResult, true).value}
-          </div>
-          <div className="text-sm text-slate-400">Resultado</div>
-        </LiquidCard>
-      </motion.div>
+      {loading ? (
+        <KPISkeleton />
+      ) : (
+        <motion.div 
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <LiquidCard className="text-center">
+            <div className="text-2xl font-bold text-blue-400">
+              {formatCurrency(totalBalance)}
+            </div>
+            <div className="text-sm text-slate-400">Saldo Total</div>
+          </LiquidCard>
+          
+          <LiquidCard className="text-center">
+            <div className="text-2xl font-bold text-green-400">
+              {formatCurrency(monthlyIncome)}
+            </div>
+            <div className="text-sm text-slate-400">Receitas</div>
+          </LiquidCard>
+          
+          <LiquidCard className="text-center">
+            <div className="text-2xl font-bold text-red-400">
+              {formatCurrency(monthlyExpenses)}
+            </div>
+            <div className="text-sm text-slate-400">Despesas</div>
+          </LiquidCard>
+          
+          <LiquidCard className="text-center">
+            <div className={`text-2xl font-bold ${
+              monthlyResult >= 0 ? 'text-green-400' : 'text-red-400'
+            }`}>
+              {formatCurrencyWithSign(monthlyResult, true).value}
+            </div>
+            <div className="text-sm text-slate-400">Resultado</div>
+          </LiquidCard>
+        </motion.div>
+      )}
 
       {/* Próximos Vencimentos */}
-      {upcomingPayments.length > 0 && (
+      {loading ? (
+        <CardSkeleton />
+      ) : upcomingPayments.length > 0 ? (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -309,6 +325,14 @@ export default function Dashboard() {
             </div>
           </LiquidCard>
         </motion.div>
+      ) : !loading && (
+        <LiquidCard>
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <span className="text-green-400 mr-2">✅</span>
+            Próximos Vencimentos
+          </h2>
+          <EmptyUpcomingPayments />
+        </LiquidCard>
       )}
 
       <QuickActions actions={quickActions} />
@@ -317,30 +341,48 @@ export default function Dashboard() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <LiquidCard>
           <h2 className="text-xl font-semibold mb-2">Contas</h2>
-          <div className="mb-4" style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                  <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
-                    {accounts.map((_, i) => (
-                      <Cell key={i} fill={chartColors[i % chartColors.length]} />
-                    ))}
-                  </Pie>
-                <Tooltip 
-                  formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="text-sm mb-4 space-y-1">
-            {accounts.map((a) => (
-              <li key={a.id} className="flex justify-between">
-                <span>{a.name}</span>
-                <span className="font-semibold">{formatCurrency(a.balance)}</span>
-              </li>
-            ))}
-          </ul>
-          <LiquidButton onClick={handleConnect} disabled={!sdkReady}>
-            Conectar Conta
+          {loading ? (
+            <>
+              <ChartSkeleton height="200px" />
+              <div className="mt-4 space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <div className="bg-card-glass/30 h-4 w-24 rounded animate-pulse"></div>
+                    <div className="bg-card-glass/30 h-4 w-16 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : accounts.length === 0 ? (
+            <EmptyAccounts onConnect={handleConnect} />
+          ) : (
+            <>
+              <div className="mb-4" style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                      <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
+                        {accounts.map((_, i) => (
+                          <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                        ))}
+                      </Pie>
+                    <Tooltip 
+                      formatter={(value, name) => [formatCurrency(Number(value)), name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <ul className="text-sm mb-4 space-y-1">
+                {accounts.map((a) => (
+                  <li key={a.id} className="flex justify-between">
+                    <span>{a.name}</span>
+                    <span className="font-semibold">{formatCurrency(a.balance)}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <LiquidButton onClick={handleConnect} disabled={!sdkReady || loading}>
+            {loading ? 'Carregando...' : 'Conectar Conta'}
           </LiquidButton>
         </LiquidCard>
       </motion.div>
@@ -348,83 +390,116 @@ export default function Dashboard() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <LiquidCard>
           <h2 className="text-xl font-semibold mb-2">Transações</h2>
-          <div style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer>
-              <BarChart data={transactions}>
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(d) => formatDateShort(d)}
-                  hide={transactions.length > 10}
-                />
-                <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
-                <Tooltip 
-                  labelFormatter={(d) => formatDate(d)}
-                  formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
-                />
-                  <Bar dataKey="amount" fill={chartColors[0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="text-sm mt-4 space-y-1 max-h-48 overflow-auto">
-            {transactions.slice(0, 10).map((t) => {
-              const currencyData = formatCurrencyWithSign(t.amount)
-              return (
-                <li key={t.id} className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded">
-                  <div>
-                    <div className="font-medium">{t.description}</div>
-                    <div className="text-slate-400 text-xs">{formatDate(t.date)}</div>
-                  </div>
-                  <div className={`font-semibold ${currencyData.className}`}>
-                    {currencyData.value}
-                  </div>
-                </li>
-              )
-            })}
-            {transactions.length > 10 && (
-              <li className="text-center text-slate-400 text-xs pt-2">
-                +{transactions.length - 10} transações adicionais
-              </li>
-            )}
-          </ul>
+          {loading ? (
+            <>
+              <ChartSkeleton height="200px" />
+              <div className="mt-4">
+                <TransactionSkeleton />
+              </div>
+            </>
+          ) : transactions.length === 0 ? (
+            <EmptyTransactions onConnect={handleConnect} />
+          ) : (
+            <>
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <BarChart data={transactions}>
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) => formatDateShort(d)}
+                      hide={transactions.length > 10}
+                    />
+                    <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
+                    <Tooltip 
+                      labelFormatter={(d) => formatDate(d)}
+                      formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
+                    />
+                      <Bar dataKey="amount" fill={chartColors[0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <ul className="text-sm mt-4 space-y-1 max-h-48 overflow-auto">
+                {transactions.slice(0, 10).map((t) => {
+                  const currencyData = formatCurrencyWithSign(t.amount)
+                  return (
+                    <li key={t.id} className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded">
+                      <div>
+                        <div className="font-medium">{t.description}</div>
+                        <div className="text-slate-400 text-xs">{formatDate(t.date)}</div>
+                      </div>
+                      <div className={`font-semibold ${currencyData.className}`}>
+                        {currencyData.value}
+                      </div>
+                    </li>
+                  )
+                })}
+                {transactions.length > 10 && (
+                  <li className="text-center text-slate-400 text-xs pt-2">
+                    +{transactions.length - 10} transações adicionais
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
         </LiquidCard>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <LiquidCard>
           <h2 className="text-xl font-semibold mb-2">Evolução de Saldos</h2>
-          <div style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer>
-              <LineChart data={balanceData}>
-                <XAxis dataKey="date" tickFormatter={(d) => formatDateShort(d)} />
-                <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
-                <Tooltip 
-                  labelFormatter={(d) => formatDate(d)}
-                  formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
-                />
-                  <Line type="monotone" dataKey="balance" stroke={chartColors[1]} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {loading ? (
+            <ChartSkeleton height="200px" />
+          ) : balanceData.length === 0 ? (
+            <div className="text-center py-8 text-slate-400">
+              <span className="text-4xl block mb-2">📈</span>
+              <p>Dados insuficientes para gerar gráfico</p>
+              <p className="text-sm">Adicione transações para ver a evolução</p>
+            </div>
+          ) : (
+            <div style={{ width: '100%', height: 200 }}>
+              <ResponsiveContainer>
+                <LineChart data={balanceData}>
+                  <XAxis dataKey="date" tickFormatter={(d) => formatDateShort(d)} />
+                  <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
+                  <Tooltip 
+                    labelFormatter={(d) => formatDate(d)}
+                    formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
+                  />
+                    <Line type="monotone" dataKey="balance" stroke={chartColors[1]} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </LiquidCard>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <LiquidCard>
           <h2 className="text-xl font-semibold mb-2">Despesas por Categoria</h2>
-          <div style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
-                    {categoryData.map((_, i) => (
-                      <Cell key={i} fill={chartColors[i % chartColors.length]} />
-                    ))}
-                  </Pie>
-                <Tooltip 
-                  formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {loading ? (
+            <ChartSkeleton height="200px" />
+          ) : categoryData.length === 0 ? (
+            <div className="text-center py-8 text-slate-400">
+              <span className="text-4xl block mb-2">🏷️</span>
+              <p>Nenhuma despesa por categoria</p>
+              <p className="text-sm">Adicione transações de despesas para ver o resumo</p>
+            </div>
+          ) : (
+            <div style={{ width: '100%', height: 200 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                    <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
+                      {categoryData.map((_, i) => (
+                        <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                      ))}
+                    </Pie>
+                  <Tooltip 
+                    formatter={(value, name) => [formatCurrency(Number(value)), name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </LiquidCard>
       </motion.div>
       </div>
