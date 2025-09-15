@@ -39,9 +39,27 @@ export default function CustomSignIn({ redirectUrl = "/dashboard" }: CustomSignI
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
         router.push(redirectUrl);
+      } else if (result.status === 'needs_second_factor') {
+        // Handle MFA - redirect to MFA component
+        router.push('/mfa-verification');
       }
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Erro ao fazer login');
+      // Sanitize error messages for security
+      const errorCode = err.errors?.[0]?.code;
+      if (errorCode === 'form_identifier_not_found') {
+        setError('E-mail ou senha incorretos');
+      } else if (errorCode === 'form_password_incorrect') {
+        setError('E-mail ou senha incorretos');
+      } else if (errorCode === 'session_exists') {
+        setError('Você já está logado');
+      } else {
+        setError('Erro ao fazer login. Tente novamente.');
+      }
+      
+      // Log detailed error for debugging (only in development)
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        console.error('Login error:', err.errors?.[0]);
+      }
     }
 
     setIsLoading(false);
@@ -54,7 +72,7 @@ export default function CustomSignIn({ redirectUrl = "/dashboard" }: CustomSignI
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: redirectUrl,
+        redirectUrl: '/sso-callback',
         redirectUrlComplete: redirectUrl,
       });
     } catch (err) {

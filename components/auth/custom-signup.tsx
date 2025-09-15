@@ -45,7 +45,22 @@ export default function CustomSignUp({ redirectUrl = "/dashboard" }: CustomSignU
       await result.prepareEmailAddressVerification({ strategy: "email_code" });
       setPendingVerification(true);
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Erro ao criar conta');
+      // Sanitize error messages for security
+      const errorCode = err.errors?.[0]?.code;
+      if (errorCode === 'form_identifier_exists') {
+        setError('Este e-mail já está em uso');
+      } else if (errorCode === 'form_password_pwned') {
+        setError('Esta senha foi comprometida. Escolha uma senha mais segura.');
+      } else if (errorCode === 'form_password_too_common') {
+        setError('Escolha uma senha mais segura e única');
+      } else {
+        setError('Erro ao criar conta. Tente novamente.');
+      }
+      
+      // Log detailed error for debugging (only in development)
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        console.error('Signup error:', err.errors?.[0]);
+      }
     }
 
     setIsLoading(false);
@@ -68,7 +83,20 @@ export default function CustomSignUp({ redirectUrl = "/dashboard" }: CustomSignU
         router.push(redirectUrl);
       }
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Código de verificação inválido');
+      // Sanitize verification error messages
+      const errorCode = err.errors?.[0]?.code;
+      if (errorCode === 'form_code_incorrect') {
+        setError('Código de verificação incorreto. Tente novamente.');
+      } else if (errorCode === 'verification_expired') {
+        setError('Código de verificação expirado. Solicite um novo código.');
+      } else {
+        setError('Erro na verificação. Tente novamente.');
+      }
+      
+      // Log detailed error for debugging (only in development)
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        console.error('Verification error:', err.errors?.[0]);
+      }
     }
 
     setIsLoading(false);
@@ -81,7 +109,7 @@ export default function CustomSignUp({ redirectUrl = "/dashboard" }: CustomSignU
     try {
       await signUp.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: redirectUrl,
+        redirectUrl: '/sso-callback',
         redirectUrlComplete: redirectUrl,
       });
     } catch (err) {
