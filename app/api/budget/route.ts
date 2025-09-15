@@ -55,6 +55,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campo totalAmount inválido' }, { status: 400 })
     }
 
+    const parsedStartDate = new Date(startDate)
+    if (Number.isNaN(parsedStartDate.getTime())) {
+      return NextResponse.json({ error: 'Campo startDate inválido' }, { status: 400 })
+    }
+
+    const parsedEndDate = new Date(endDate)
+    if (Number.isNaN(parsedEndDate.getTime())) {
+      return NextResponse.json({ error: 'Campo endDate inválido' }, { status: 400 })
+    }
+
+    if (parsedEndDate < parsedStartDate) {
+      return NextResponse.json({ error: 'A data de término deve ser posterior à data de início' }, { status: 400 })
+    }
+
     if (items && Array.isArray(items)) {
       for (const item of items) {
         const itemAmount = Number(item.amount)
@@ -72,8 +86,8 @@ export async function POST(request: NextRequest) {
         totalAmount: totalAmountNumber,
         currency: currency || 'BRL',
         period,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
         isActive: true,
         items: {
           create: items?.map((item: any) => ({

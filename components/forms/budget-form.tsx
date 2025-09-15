@@ -18,6 +18,10 @@ export function BudgetForm({ budget, onSubmit, onCancel, loading }: BudgetFormPr
   const [formData, setFormData] = useState<Budget>({
     name: budget?.name || '',
     totalAmount: budget?.totalAmount || 0,
+    currency: budget?.currency || 'BRL',
+    period: budget?.period || 'monthly',
+    startDate: budget?.startDate ? new Date(budget.startDate).toISOString().split('T')[0] : '',
+    endDate: budget?.endDate ? new Date(budget.endDate).toISOString().split('T')[0] : '',
     items: budget?.items || [{ name: '', amount: 0, category: '' }]
   })
 
@@ -53,6 +57,17 @@ export function BudgetForm({ budget, onSubmit, onCancel, loading }: BudgetFormPr
     try {
       // Calculate total amount from items if not manually set
       const calculatedTotal = formData.items.reduce((sum, item) => sum + item.amount, 0)
+
+      if (formData.startDate && formData.endDate) {
+        const start = new Date(formData.startDate)
+        const end = new Date(formData.endDate)
+
+        if (end < start) {
+          window.alert('A data de término deve ser posterior à data de início.')
+          return
+        }
+      }
+
       const finalData = {
         ...formData,
         totalAmount: formData.totalAmount || calculatedTotal
@@ -101,6 +116,74 @@ export function BudgetForm({ budget, onSubmit, onCancel, loading }: BudgetFormPr
                 required
                 className="focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* Budget Details */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Moeda
+                </label>
+                <select
+                  value={formData.currency || 'BRL'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+                  className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                >
+                  <option value="BRL">Real Brasileiro (BRL)</option>
+                  <option value="USD">Dólar Americano (USD)</option>
+                  <option value="EUR">Euro (EUR)</option>
+                  <option value="GBP">Libra Esterlina (GBP)</option>
+                  <option value="JPY">Iene (JPY)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Período
+                </label>
+                <select
+                  value={formData.period || 'monthly'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, period: e.target.value }))}
+                  className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                >
+                  <option value="weekly">Semanal</option>
+                  <option value="biweekly">Quinzenal</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="quarterly">Trimestral</option>
+                  <option value="yearly">Anual</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Data de Início
+                </label>
+                <LiquidInput
+                  type="date"
+                  value={formData.startDate || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  required
+                  className="focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Data de Término
+                </label>
+                <LiquidInput
+                  type="date"
+                  value={formData.endDate || ''}
+                  min={formData.startDate || undefined}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  required
+                  className="focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
 
             {/* Budget Items */}

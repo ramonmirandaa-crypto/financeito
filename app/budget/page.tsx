@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { BudgetForm } from '@/components/forms/budget-form'
-import { Budget, BudgetItem } from '@/types/budget'
+import { Budget } from '@/types/budget'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import { chartColors } from '@/lib/theme'
 
@@ -34,14 +34,32 @@ export default function BudgetPage() {
     }
   }
 
-  async function handleCreateBudget(budgetData: any) {
+  const prepareBudgetPayload = (budgetData: Budget) => ({
+    name: budgetData.name,
+    totalAmount: Number(budgetData.totalAmount),
+    currency: budgetData.currency || 'BRL',
+    period: budgetData.period || 'monthly',
+    startDate: budgetData.startDate,
+    endDate: budgetData.endDate,
+    items: budgetData.items?.map(item => ({
+      name: item.name,
+      category: item.category,
+      amount: Number(item.amount ?? 0),
+      spent: Number(item.spent ?? 0),
+      currency: item.currency || budgetData.currency || 'BRL'
+    })) || []
+  })
+
+  async function handleCreateBudget(budgetData: Budget) {
     try {
+      const payload = prepareBudgetPayload(budgetData)
+
       const res = await fetch('/api/budget', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(budgetData)
+        body: JSON.stringify(payload)
       })
-      
+
       if (res.ok) {
         const newBudget = await res.json()
         setBudgets(prev => [newBudget, ...prev])
@@ -52,16 +70,18 @@ export default function BudgetPage() {
     }
   }
 
-  async function handleEditBudget(budgetData: any) {
+  async function handleEditBudget(budgetData: Budget) {
     if (!editingBudget) return
-    
+
     try {
+      const payload = prepareBudgetPayload(budgetData)
+
       const res = await fetch(`/api/budget/${editingBudget.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(budgetData)
+        body: JSON.stringify(payload)
       })
-      
+
       if (res.ok) {
         const updatedBudget = await res.json()
         setBudgets(prev => prev.map(b => b.id === editingBudget.id ? updatedBudget : b))

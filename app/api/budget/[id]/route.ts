@@ -11,7 +11,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const id = params.id
     const data = await request.json()
-    const { name, totalAmount, items } = data
+    const { name, totalAmount, currency, period, startDate, endDate, items } = data
 
     let totalAmountNumber: number | undefined
     if (totalAmount !== undefined) {
@@ -46,14 +46,43 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 })
     }
 
+    let parsedStartDate: Date | undefined
+    if (startDate !== undefined) {
+      const startValue = new Date(startDate)
+      if (Number.isNaN(startValue.getTime())) {
+        return NextResponse.json({ error: 'Campo startDate inválido' }, { status: 400 })
+      }
+      parsedStartDate = startValue
+    }
+
+    let parsedEndDate: Date | undefined
+    if (endDate !== undefined) {
+      const endValue = new Date(endDate)
+      if (Number.isNaN(endValue.getTime())) {
+        return NextResponse.json({ error: 'Campo endDate inválido' }, { status: 400 })
+      }
+      parsedEndDate = endValue
+    }
+
+    const startForValidation = parsedStartDate ?? existingBudget.startDate
+    const endForValidation = parsedEndDate ?? existingBudget.endDate
+
+    if (startForValidation && endForValidation && endForValidation < startForValidation) {
+      return NextResponse.json({ error: 'A data de término deve ser posterior à data de início' }, { status: 400 })
+    }
+
     // Update budget and items in transaction
     const budget = await prisma.$transaction(async (tx) => {
       // Update budget
       const updatedBudget = await tx.budget.update({
         where: { id },
         data: {
-          name: name || existingBudget.name,
-          totalAmount: totalAmount ? totalAmountNumber! : existingBudget.totalAmount
+          name: name ?? existingBudget.name,
+          totalAmount: totalAmountNumber ?? existingBudget.totalAmount,
+          currency: currency ?? existingBudget.currency,
+          period: period ?? existingBudget.period,
+          startDate: parsedStartDate ?? existingBudget.startDate,
+          endDate: parsedEndDate ?? existingBudget.endDate
         }
       })
 
@@ -72,7 +101,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
               name: item.name,
               amount: Number(item.amount),
               spent: Number(item.spent || 0),
-              category: item.category
+              category: item.category,
+              currency: item.currency || currency || existingBudget.currency
             }))
           })
         }
