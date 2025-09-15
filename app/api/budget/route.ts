@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession()
-    if (!session?.user) {
+    const { userId } = auth()
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
     const budgets = await prisma.budget.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
         items: true
       },
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthSession()
-    if (!session?.user) {
+    const { userId } = auth()
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Create budget
     const budget = await prisma.budget.create({
       data: {
-        userId: session.user.id,
+        userId,
         name,
         totalAmount: totalAmountNumber,
         currency: currency || 'BRL',

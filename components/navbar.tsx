@@ -4,28 +4,27 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidButton } from './ui/liquid-button'
-import { useSession, signOut } from 'next-auth/react'
+import { useAuth, SignedIn, SignedOut } from '@clerk/nextjs'
 
 export default function Navbar() {
-  const { data: session } = useSession()
-  const authenticated = !!session
+  const { signOut } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' })
+    await signOut()
   }
 
-  const navItems = authenticated ? [
+  const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/budget', label: 'Orçamento' },
     { href: '/goals', label: 'Metas' },
     { href: '/subscriptions', label: 'Assinaturas' },
-    { href: '/loans', label: 'Empréstimos' }
-  ] : []
+    { href: '/loans', label: 'Empréstimos' },
+  ]
 
   return (
-    <motion.nav 
+    <motion.nav
       className="sticky top-0 z-50 glass-effect border-b border-white/10"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -35,7 +34,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <motion.div 
+            <motion.div
               className="text-2xl font-bold gradient-text"
               whileHover={{ scale: 1.05 }}
             >
@@ -44,12 +43,12 @@ export default function Navbar() {
           </Link>
 
           {/* Navigation Items */}
-          {authenticated && (
+          <SignedIn>
             <div className="hidden md:flex items-center space-x-6">
               {navItems.map((item) => (
-                <Link 
+                <Link
                   key={item.href}
-                  href={item.href} 
+                  href={item.href}
                   className={`relative px-3 py-2 text-sm font-medium transition-colors hover:text-blue-300 ${
                     pathname === item.href ? 'text-blue-400' : 'text-slate-300'
                   }`}
@@ -64,41 +63,42 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
-          )}
+          </SignedIn>
 
           {/* Auth Actions */}
           <div className="flex items-center space-x-3">
-            {authenticated ? (
-              <LiquidButton 
-                variant="ghost" 
-                size="sm" 
+            <SignedIn>
+              <LiquidButton
+                variant="ghost"
+                size="sm"
                 onClick={handleLogout}
               >
                 Sair
               </LiquidButton>
-            ) : (
-              <LiquidButton 
-                variant="primary" 
-                size="sm" 
+            </SignedIn>
+            <SignedOut>
+              <LiquidButton
+                variant="primary"
+                size="sm"
                 onClick={() => router.push('/login')}
               >
                 Entrar
               </LiquidButton>
-            )}
+            </SignedOut>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        {authenticated && (
+        <SignedIn>
           <div className="md:hidden mt-3 pt-3 border-t border-white/10">
             <div className="flex flex-wrap gap-2">
               {navItems.map((item) => (
-                <Link 
+                <Link
                   key={item.href}
                   href={item.href}
                   className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                    pathname === item.href 
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30' 
+                    pathname === item.href
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   }`}
                 >
@@ -107,9 +107,8 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-        )}
+        </SignedIn>
       </div>
     </motion.nav>
   )
 }
-

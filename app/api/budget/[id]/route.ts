@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getAuthSession()
-    if (!session?.user) {
+    const { userId } = auth()
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Verify budget belongs to user
     const existingBudget = await prisma.budget.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId },
       include: { items: true }
     })
 
@@ -105,8 +105,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getAuthSession()
-    if (!session?.user) {
+    const { userId } = auth()
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
@@ -114,7 +114,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     // Verify budget belongs to user
     const existingBudget = await prisma.budget.findFirst({
-      where: { id, userId: session.user.id }
+      where: { id, userId }
     })
 
     if (!existingBudget) {

@@ -1,5 +1,5 @@
-import AuthForm from "@/components/auth/auth-form";
+import { SignIn } from "@clerk/nextjs";
 
 export default function Login() {
-  return <AuthForm title="Entrar" />;
+  return <SignIn />;
 }

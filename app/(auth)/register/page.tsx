@@ -1,5 +1,5 @@
-import AuthForm from "@/components/auth/auth-form";
+import { SignUp } from "@clerk/nextjs";
 
 export default function Register() {
-  return <AuthForm title="Registrar" />;
+  return <SignUp />;
 }

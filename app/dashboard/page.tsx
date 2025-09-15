@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import {
   PieChart,
@@ -28,7 +28,7 @@ export default function Dashboard() {
   const [subscriptions, setSubscriptions] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
   const [sdkReady, setSdkReady] = useState(false)
-  const { status } = useSession()
+  const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
 
   async function loadData() {
@@ -75,14 +75,13 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (!isLoaded) return
+    if (!isSignedIn) {
       router.push('/login')
       return
     }
-    if (status === 'authenticated') {
-      loadData()
-    }
-  }, [status, router])
+    loadData()
+  }, [isLoaded, isSignedIn, router])
 
   useEffect(() => {
     if ((window as any).PluggyConnect) {

@@ -1,8 +1,8 @@
 'use client'
 
-import { SessionProvider } from 'next-auth/react'
+import { ClerkProvider } from '@clerk/nextjs'
 import type { ReactNode } from 'react'
 
 export default function Providers({ children }: { children: ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>
+  return <ClerkProvider>{children}</ClerkProvider>
 }
