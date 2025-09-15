@@ -184,9 +184,9 @@ export default function BudgetPage() {
                     <div style={{ width: '100%', height: 200 }}>
                       <ResponsiveContainer>
                         <PieChart>
-                          <Pie 
+                          <Pie
                             data={activeBudget.items.map(item => ({
-                              name: item.category,
+                              name: item.name || item.category,
                               value: item.spent ?? 0,
                               budget: item.amount
                             }))}
@@ -219,7 +219,7 @@ export default function BudgetPage() {
                       return (
                         <div key={item.id} className="p-4 glass-effect rounded-xl">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-white">{item.category}</span>
+                            <span className="font-medium text-white">{item.name || item.category}</span>
                             <span className={`text-sm ${isOverBudget ? 'text-red-300' : 'text-slate-300'}`}>
                               {percentage.toFixed(1)}%
                             </span>

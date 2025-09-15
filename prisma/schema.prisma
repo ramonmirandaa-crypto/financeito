@@ -80,6 +80,7 @@ model BudgetItem {
   budget       Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   accountId    String?
   bankAccount  BankAccount? @relation(fields: [accountId], references: [id])
+  name         String?
   category     String
   amount       Decimal      @db.Decimal(18, 2)
   spent        Decimal      @db.Decimal(18, 2) @default(0)
