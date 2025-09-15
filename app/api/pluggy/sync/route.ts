@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const accResp = await listAccounts({ itemId })
   const accounts = accResp.results || accResp
   for (const acc of accounts) {
-    await prisma.account.upsert({
+    await prisma.bankAccount.upsert({
       where: { id: acc.id },
       update: {
         userId: user.id,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const accounts = await prisma.account.findMany({ where: { userId: user.id } })
+  const accounts = await prisma.bankAccount.findMany({ where: { userId: user.id } })
   const transactions = await prisma.transaction.findMany({
     where: { userId: user.id },
     orderBy: { date: 'desc' },
