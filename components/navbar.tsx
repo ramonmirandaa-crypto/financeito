@@ -1,38 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidButton } from './ui/liquid-button'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navbar() {
-  const [authenticated, setAuthenticated] = useState(false)
+  const { data: session } = useSession()
+  const authenticated = !!session
   const pathname = usePathname()
   const router = useRouter()
 
-  async function checkAuth() {
-    try {
-      const res = await fetch('/api/auth/me', { cache: 'no-store' })
-      if (res.ok) {
-        const data = await res.json()
-        setAuthenticated(data.authenticated)
-      } else {
-        setAuthenticated(false)
-      }
-    } catch {
-      setAuthenticated(false)
-    }
-  }
-
-  useEffect(() => {
-    checkAuth()
-  }, [pathname])
-
-  async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    setAuthenticated(false)
-    router.refresh()
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' })
   }
 
   const navItems = authenticated ? [
