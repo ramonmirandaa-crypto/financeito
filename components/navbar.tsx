@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidButton } from './ui/liquid-button'
-import { useAuth, SignedIn, SignedOut } from '@clerk/nextjs'
+import { useUser, useAuth, SignedIn, SignedOut } from '@clerk/nextjs'
 
 export default function Navbar() {
+  const { user: _user } = useUser()
   const { signOut } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
