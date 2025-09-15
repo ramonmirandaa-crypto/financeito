@@ -19,6 +19,8 @@ import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { motion } from 'framer-motion'
 import { chartColors } from '@/lib/theme'
+import { QuickAccess, QuickAccessItem } from '@/components/quick-access'
+import { QuickActions, QuickAction } from '@/components/quick-actions'
 
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
@@ -145,12 +147,47 @@ export default function Dashboard() {
     value,
   }))
 
+  const quickAccessItems: QuickAccessItem[] = [
+    {
+      title: 'Transações',
+      description: 'Histórico de movimentações',
+      href: '/dashboard#transactions',
+    },
+    {
+      title: 'Cartões',
+      description: 'Gerencie seus cartões',
+      href: '/dashboard#cards',
+    },
+    {
+      title: 'Relatórios',
+      description: 'Relatórios detalhados',
+      href: '/dashboard#reports',
+    },
+    { title: 'Orçamentos', description: 'Planeje seus gastos', href: '/budget' },
+    { title: 'Metas', description: 'Acompanhe seus objetivos', href: '/goals' },
+    {
+      title: 'Assinaturas',
+      description: 'Controle suas assinaturas',
+      href: '/subscriptions',
+    },
+    { title: 'Empréstimos', description: 'Gerencie seus empréstimos', href: '/loans' },
+  ]
+
+  const quickActions: QuickAction[] = [
+    { title: 'Conectar Conta', onClick: handleConnect },
+    { title: 'Adicionar Meta', href: '/goals/new' },
+    { title: 'Novo Orçamento', href: '/budget/new' },
+  ]
+
   return (
     <motion.div
-      className="grid md:grid-cols-2 gap-6"
+      className="space-y-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
+      <QuickActions actions={quickActions} />
+      <QuickAccess items={quickAccessItems} />
+      <div className="grid md:grid-cols-2 gap-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <LiquidCard>
           <h2 className="text-xl font-semibold mb-2">Contas</h2>
@@ -235,6 +272,7 @@ export default function Dashboard() {
           </div>
         </LiquidCard>
       </motion.div>
+      </div>
     </motion.div>
   )
 }
