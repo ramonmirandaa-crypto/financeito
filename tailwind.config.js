@@ -34,6 +34,11 @@ module.exports = {
           foreground: 'hsl(var(--success-foreground))',
           muted: 'hsl(var(--success-muted))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+          muted: 'hsl(var(--success-muted))',
+        },
         warning: {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
