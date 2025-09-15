@@ -43,13 +43,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 })
     }
 
+    const targetAmountNumber = Number(targetAmount)
+    if (Number.isNaN(targetAmountNumber)) {
+      return NextResponse.json({ error: 'Campo targetAmount inválido' }, { status: 400 })
+    }
+
     // Create goal
     const goal = await prisma.goal.create({
       data: {
         userId: session.user.id,
         title,
         description,
-        targetAmount: Number(targetAmount),
+        targetAmount: targetAmountNumber,
         currency: currency || 'BRL',
         targetDate: new Date(targetDate),
         category,

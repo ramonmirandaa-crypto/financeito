@@ -12,6 +12,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const id = params.id
     const data = await request.json()
 
+    let targetAmountNumber: number | undefined
+    if (data.targetAmount !== undefined) {
+      targetAmountNumber = Number(data.targetAmount)
+      if (Number.isNaN(targetAmountNumber)) {
+        return NextResponse.json({ error: 'Campo targetAmount inválido' }, { status: 400 })
+      }
+    }
+
+    let currentAmountNumber: number | undefined
+    if (data.currentAmount !== undefined) {
+      currentAmountNumber = Number(data.currentAmount)
+      if (Number.isNaN(currentAmountNumber)) {
+        return NextResponse.json({ error: 'Campo currentAmount inválido' }, { status: 400 })
+      }
+    }
+
     // Verify goal belongs to user
     const existingGoal = await prisma.goal.findFirst({
       where: { id, userId: session.user.id }
@@ -26,8 +42,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id },
       data: {
         ...data,
-        targetAmount: data.targetAmount ? Number(data.targetAmount) : undefined,
-        currentAmount: data.currentAmount ? Number(data.currentAmount) : undefined,
+        targetAmount: targetAmountNumber,
+        currentAmount: currentAmountNumber,
         targetDate: data.targetDate ? new Date(data.targetDate) : undefined
       }
     })

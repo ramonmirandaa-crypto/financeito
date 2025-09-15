@@ -12,6 +12,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const id = params.id
     const data = await request.json()
 
+    let amountNumber: number | undefined
+    if (data.amount !== undefined) {
+      amountNumber = Number(data.amount)
+      if (Number.isNaN(amountNumber)) {
+        return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
+      }
+    }
+
     // Verify subscription belongs to user
     const existingSubscription = await prisma.subscription.findFirst({
       where: { id, userId: session.user.id }
@@ -26,7 +34,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id },
       data: {
         ...data,
-        amount: data.amount ? Number(data.amount) : undefined,
+        amount: amountNumber,
         nextBilling: data.nextBilling ? new Date(data.nextBilling) : undefined
       }
     })
