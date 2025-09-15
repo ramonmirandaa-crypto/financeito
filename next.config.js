@@ -10,6 +10,7 @@ const nextConfig = {
     buildActivity: false
   },
   
+  
   // Production optimizations
   ...(process.env.NODE_ENV === 'production' && {
     output: 'standalone',
