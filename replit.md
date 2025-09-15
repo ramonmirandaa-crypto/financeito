@@ -12,8 +12,11 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Next.js 14 with TypeScript and App Router
 - **Styling**: Tailwind CSS with custom dark theme and glassmorphism effects
 - **UI Components**: Custom liquid-style components with backdrop blur effects
+- **Navigation**: Fluid circular menu inspired by 21st.dev design replacing traditional sidebar
 - **Data Visualization**: Recharts library for financial charts (pie, bar, line charts)
 - **Animation**: Framer Motion for smooth transitions and interactions
+- **Loading States**: Comprehensive skeleton system for all dashboard components
+- **Empty States**: Informative empty states with actionable CTAs for better UX
 
 ## Backend Architecture
 - **API Layer**: Next.js API routes for RESTful endpoints

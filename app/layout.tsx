@@ -1,7 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import Navbar from '@/components/navbar'
-import Sidebar from '@/components/sidebar'
+import FluidSidebar from '@/components/fluid-sidebar'
 import Providers from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -14,8 +14,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <Providers>
-          <main className="grid min-h-screen w-full grid-cols-[16rem_1fr]">
-            <Sidebar />
+          <main className="min-h-screen w-full relative">
+            <FluidSidebar />
             <div className="flex flex-col">
               <header>
                 <Navbar />
