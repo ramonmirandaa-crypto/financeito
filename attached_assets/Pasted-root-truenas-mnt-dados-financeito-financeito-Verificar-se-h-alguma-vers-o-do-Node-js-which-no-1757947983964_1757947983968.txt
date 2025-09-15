@@ -1,0 +1,38 @@
+root@truenas[/mnt/dados/financeito/financeito]# # Verificar se há alguma versão do Node.js
+which node
+which nodejs
+node --version 2>/dev/null || echo "Node.js não encontrado"
+
+# Verificar como a aplicação está rodando atualmente
+ps aux | grep financeito
+ps aux | grep node
+ps aux | grep next
+
+# Verificar se há containers Docker
+docker ps | grep financeito 2>/dev/null || echo "Docker não rodando"
+
+# Ver processos na porta 3000/5000
+netstat -tulpn | grep :3000
+netstat -tulpn | grep :5000
+zsh: command not found: #
+node not found
+nodejs not found
+Node.js não encontrado
+zsh: command not found: #
+root      814374  0.0  0.0   3744  1348 pts/11   S+   11:53   0:00 grep financeito
+apps        7616  0.0  0.4 1114972 18672 ?       Ssl  Sep14   0:02 /usr/lib/code-server/lib/node /usr/lib/code-server --bind-addr 0.0.0.0:30145 .
+apps        8099  0.1  5.9 32903500 230564 ?     Sl   Sep14   1:57 node /usr/local/bin/n8n
+apps       11036  0.1  2.9 11971480 112828 ?     Sl   Sep14   2:04 /usr/lib/code-server/lib/node /usr/lib/code-server/out/node/entry
+apps      162161  0.2  0.9 1135172 35748 ?       Sl   Sep14   2:30 /usr/lib/code-server/lib/node /usr/lib/code-server/lib/vscode/out/bootstrap-fork --type=ptyHost --logsPath /home/coder/.local/share/code-server/logs/20250914T212237
+1001      565064  0.0  0.0   2584   128 ?        Ss   05:33   0:00 sh -c ./node_modules/.bin/prisma migrate deploy && npm run start
+root      814382  0.0  0.0   3744  1312 pts/11   S+   11:53   0:00 grep node
+1001      565254  0.0  0.0   2584   104 ?        S    05:33   0:00 sh -c next start -p 5000 --hostname 0.0.0.0
+1001      565255  0.0  2.9 22773692 114040 ?     Sl   05:33   0:17 next-server (v14.2.5)
+root      814384  0.0  0.0   3744  1388 pts/11   S+   11:53   0:00 grep next
+zsh: command not found: #
+8b629cb4060e   financeito-web                                                                         "docker-entrypoint.s…"   6 hours ago    Up 6 hours              0.0.0.0:5000->5000/tcp, :::5000->5000/tcp                     financeito-web
+fc466c67ac6b   postgres:16                                                                            "docker-entrypoint.s…"   8 hours ago    Up 8 hours (healthy)    5432/tcp                                                      financeito-db
+zsh: command not found: #
+tcp        0      0 0.0.0.0:5000            0.0.0.0:*               LISTEN      565009/docker-proxy 
+tcp6       0      0 :::5000                 :::*                    LISTEN      565016/docker-proxy 
+root@truenas[/mnt/dados/financeito/financeito]# 
