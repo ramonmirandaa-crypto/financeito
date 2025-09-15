@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
 import {
   PieChart,
   Pie,
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
+  const { toast } = useToast()
 
   async function loadData() {
     setLoading(true)
@@ -89,6 +91,11 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
+      toast.error(
+        'Erro ao carregar dados',
+        'Não foi possível carregar suas informações financeiras. Tente novamente.',
+        { duration: 5000 }
+      )
     } finally {
       setLoading(false)
     }
@@ -126,21 +133,37 @@ export default function Dashboard() {
     const connectToken = json.connectToken || json.linkToken
     // @ts-ignore
     if (!(window as any).PluggyConnect) {
-      alert('SDK carregando')
+      toast.warning(
+        'SDK ainda não está pronto',
+        'Aguarde alguns segundos enquanto carregamos o SDK de conexão bancária.'
+      )
       return
     }
     const connect = new (window as any).PluggyConnect({ connectToken })
     connect.onSuccess(async (item: any) => {
-      const resp = await fetch('/api/pluggy/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: item.id }),
-      })
-      if (resp.status === 401) {
-        window.location.href = '/login'
-        return
+      try {
+        const resp = await fetch('/api/pluggy/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId: item.id }),
+        })
+        if (resp.status === 401) {
+          window.location.href = '/login'
+          return
+        }
+        await loadData()
+        toast.success(
+          'Conta conectada com sucesso!',
+          'Suas transações bancárias foram sincronizadas e já estão disponíveis.',
+          { duration: 4000 }
+        )
+      } catch (error) {
+        toast.error(
+          'Erro na sincronização',
+          'Não foi possível sincronizar suas transações. Tente novamente.',
+          { duration: 5000 }
+        )
       }
-      await loadData()
     })
     connect.init()
   }
