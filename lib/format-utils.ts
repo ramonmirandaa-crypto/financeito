@@ -5,6 +5,7 @@
 
 // Configurações de localização brasileira
 const PT_BR_LOCALE = 'pt-BR';
+const BRAZIL_TIME_ZONE = 'America/Sao_Paulo';
 const BRL_CURRENCY_OPTIONS: Intl.NumberFormatOptions = {
   style: 'currency',
   currency: 'BRL',
@@ -59,7 +60,7 @@ export function formatDate(date: string | Date | number): string {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-    timeZone: 'America/Sao_Paulo'
+    timeZone: BRAZIL_TIME_ZONE
   }).format(dateObj);
 }
 
@@ -80,7 +81,7 @@ export function formatDateTime(date: string | Date | number): string {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Sao_Paulo'
+    timeZone: BRAZIL_TIME_ZONE
   }).format(dateObj);
 }
 
@@ -98,7 +99,7 @@ export function formatDateShort(date: string | Date | number): string {
   return new Intl.DateTimeFormat(PT_BR_LOCALE, {
     day: '2-digit',
     month: '2-digit',
-    timeZone: 'America/Sao_Paulo'
+    timeZone: BRAZIL_TIME_ZONE
   }).format(dateObj);
 }
 
@@ -117,8 +118,58 @@ export function formatDateLong(date: string | Date | number): string {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-    timeZone: 'America/Sao_Paulo'
+    timeZone: BRAZIL_TIME_ZONE
   }).format(dateObj);
+}
+
+const isoDateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const ISO_DATE_REGEX = /^(\d{4}-\d{2}-\d{2})/;
+
+const getIsoDateFormatter = (timeZone: string) => {
+  if (!isoDateFormatterCache.has(timeZone)) {
+    isoDateFormatterCache.set(
+      timeZone,
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+    );
+  }
+
+  return isoDateFormatterCache.get(timeZone)!;
+};
+
+/**
+ * Normaliza datas para o formato YYYY-MM-DD respeitando o fuso horário brasileiro.
+ * Essencial para agrupar transações diárias sem mudanças inesperadas próximas da meia-noite.
+ * @param value - Valor de data a ser normalizado
+ * @param timeZone - Fuso horário alvo (padrão: America/Sao_Paulo)
+ * @returns Data formatada como YYYY-MM-DD
+ */
+export function formatDateToISODate(
+  value?: string | Date | number | null,
+  timeZone: string = BRAZIL_TIME_ZONE
+): string {
+  if (typeof value === 'string') {
+    const trimmedValue = value.trim();
+    const match = trimmedValue.match(ISO_DATE_REGEX);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  const dateCandidate =
+    value !== null && value !== undefined && value !== ''
+      ? new Date(value)
+      : new Date();
+
+  if (Number.isNaN(dateCandidate.getTime())) {
+    return getIsoDateFormatter(timeZone).format(new Date());
+  }
+
+  return getIsoDateFormatter(timeZone).format(dateCandidate);
 }
 
 /**

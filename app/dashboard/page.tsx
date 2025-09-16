@@ -28,6 +28,7 @@ import {
   formatDate,
   formatCurrencyWithSign,
   formatDateShort,
+  formatDateToISODate,
   isUpcoming,
   isOverdue
 } from '@/lib/format-utils'
@@ -78,24 +79,6 @@ const parseDateValue = (value: unknown): string => {
   return new Date().toISOString()
 }
 
-const formatDateForInput = (value?: string) => {
-  if (!value) {
-    return new Date().toISOString().split('T')[0]
-  }
-
-  const parsed = new Date(value)
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toISOString().split('T')[0]
-  }
-
-  const match = value.match(/^\d{4}-\d{2}-\d{2}/)
-  if (match) {
-    return match[0]
-  }
-
-  return new Date().toISOString().split('T')[0]
-}
-
 const normalizeTransaction = (transaction: any): Transaction => ({
   ...transaction,
   id: transaction.id,
@@ -110,7 +93,7 @@ const toTransactionFormData = (transaction: Transaction): TransactionFormData =>
   description: transaction.description ?? '',
   category: transaction.category ?? '',
   amount: transaction.amount,
-  date: formatDateForInput(transaction.date),
+  date: formatDateToISODate(transaction.date),
 })
 
 export default function Dashboard() {
@@ -326,7 +309,9 @@ export default function Dashboard() {
 
   const calendarData = Object.values(
     transactions.reduce<Record<string, TransactionCalendarDay>>((acc, t) => {
-      const normalizedDate = formatDateForInput(t.date)
+      // Mantém o agrupamento diário estável mesmo para lançamentos perto da meia-noite em São Paulo.
+      // Isso facilita o teste manual criando transações nesses horários extremos e conferindo o calendário.
+      const normalizedDate = formatDateToISODate(t.date)
 
       const current = acc[normalizedDate] ?? {
         date: normalizedDate,
@@ -342,11 +327,7 @@ export default function Dashboard() {
 
       return acc
     }, {})
-  ).sort(
-    (a, b) =>
-      new Date(`${a.date}T00:00:00`).getTime() -
-      new Date(`${b.date}T00:00:00`).getTime()
-  )
+  ).sort((a, b) => a.date.localeCompare(b.date))
 
   const quickAccessItems: QuickAccessItem[] = [
     {
