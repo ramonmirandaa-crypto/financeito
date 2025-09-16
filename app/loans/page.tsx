@@ -212,14 +212,34 @@ export default function LoansPage() {
                   >
                     <LiquidCard variant="hoverable">
                       <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                            {typeIcon} {loan.title}
-                            {loan.isPaid && <span className="text-green-400">✅</span>}
-                            {isOverdue && <span className="text-red-400">⚠️</span>}
-                          </h3>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              {typeIcon} {loan.title}
+                              {loan.isPaid && <span className="text-green-400">✅</span>}
+                              {isOverdue && <span className="text-red-400">⚠️</span>}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <LiquidButton
+                                size="sm"
+                                variant="outline"
+                                className="text-xs text-blue-300 border-blue-500/50 hover:bg-blue-500/10"
+                                onClick={() => setEditingLoan(loan)}
+                              >
+                                ✏️ Editar
+                              </LiquidButton>
+                              <LiquidButton
+                                size="sm"
+                                variant="outline"
+                                className="text-xs text-red-300 border-red-500/50 hover:bg-red-500/10"
+                                onClick={() => setDeletingLoan(loan.id)}
+                              >
+                                🗑️ Excluir
+                              </LiquidButton>
+                            </div>
+                          </div>
                           {loan.description && (
-                            <p className="text-sm text-slate-400 mt-1">{loan.description}</p>
+                            <p className="text-sm text-slate-400">{loan.description}</p>
                           )}
                         </div>
                         <div className="text-right">
