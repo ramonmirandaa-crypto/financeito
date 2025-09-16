@@ -38,6 +38,10 @@ import {
   EmptyUpcomingPayments
 } from '@/components/ui/empty-state'
 import { createHandleConnect } from '@/lib/pluggy-connect'
+import {
+  TransactionCalendar,
+  type TransactionCalendarDay,
+} from '@/components/transactions/transaction-calendar'
 
 interface Transaction {
   id: string
@@ -319,6 +323,30 @@ export default function Dashboard() {
     name,
     value,
   }))
+
+  const calendarData = Object.values(
+    transactions.reduce<Record<string, TransactionCalendarDay>>((acc, t) => {
+      const normalizedDate = formatDateForInput(t.date)
+
+      const current = acc[normalizedDate] ?? {
+        date: normalizedDate,
+        income: 0,
+        expense: 0,
+      }
+
+      acc[normalizedDate] = {
+        ...current,
+        income: current.income + (t.amount >= 0 ? t.amount : 0),
+        expense: current.expense + (t.amount < 0 ? Math.abs(t.amount) : 0),
+      }
+
+      return acc
+    }, {})
+  ).sort(
+    (a, b) =>
+      new Date(`${a.date}T00:00:00`).getTime() -
+      new Date(`${b.date}T00:00:00`).getTime()
+  )
 
   const quickAccessItems: QuickAccessItem[] = [
     {
@@ -664,6 +692,34 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+          )}
+        </LiquidCard>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <LiquidCard>
+          <h2 className="text-xl font-semibold">Calendário Financeiro</h2>
+          <p className="text-sm text-slate-400 mt-1 mb-4">
+            Acompanhe o total diário de receitas e despesas.
+          </p>
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-card-border/60 bg-card-glass/40 p-4"
+                >
+                  <div className="mb-3 h-4 w-24 rounded bg-card-glass/60 animate-pulse" />
+                  <div className="mb-4 flex gap-3">
+                    <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
+                    <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-card-glass/60 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <TransactionCalendar days={calendarData} />
           )}
         </LiquidCard>
       </motion.div>
