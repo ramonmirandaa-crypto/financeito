@@ -68,7 +68,7 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
       >
         <LiquidCard>
           <form onSubmit={handleSubmit} className="space-y-6">
