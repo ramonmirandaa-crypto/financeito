@@ -227,15 +227,35 @@ export default function SubscriptionsPage() {
                   >
                     <LiquidCard variant="hoverable">
                       <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                            {subscription.name}
-                            {!subscription.isActive && <span className="text-gray-400">⏸️</span>}
-                            {isUpcoming && <span className="text-yellow-400">⚠️</span>}
-                            {isOverdue && <span className="text-red-400">❗</span>}
-                          </h3>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              {subscription.name}
+                              {!subscription.isActive && <span className="text-gray-400">⏸️</span>}
+                              {isUpcoming && <span className="text-yellow-400">⚠️</span>}
+                              {isOverdue && <span className="text-red-400">❗</span>}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <LiquidButton
+                                size="sm"
+                                variant="outline"
+                                className="text-xs text-blue-300 border-blue-500/50 hover:bg-blue-500/10"
+                                onClick={() => setEditingSubscription(subscription)}
+                              >
+                                ✏️ Editar
+                              </LiquidButton>
+                              <LiquidButton
+                                size="sm"
+                                variant="outline"
+                                className="text-xs text-red-300 border-red-500/50 hover:bg-red-500/10"
+                                onClick={() => setDeletingSubscription(subscription.id)}
+                              >
+                                🗑️ Excluir
+                              </LiquidButton>
+                            </div>
+                          </div>
                           {subscription.description && (
-                            <p className="text-sm text-slate-400 mt-1">{subscription.description}</p>
+                            <p className="text-sm text-slate-400">{subscription.description}</p>
                           )}
                         </div>
                         <div className="text-right">
