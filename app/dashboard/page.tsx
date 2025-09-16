@@ -18,6 +18,7 @@ import {
 } from 'recharts'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { TransactionForm, TransactionFormData } from '@/components/forms/transaction-form'
 import { motion } from 'framer-motion'
 import { chartColors } from '@/lib/theme'
 import { QuickAccess, QuickAccessItem } from '@/components/quick-access'
@@ -38,15 +39,90 @@ import {
 } from '@/components/ui/empty-state'
 import { createHandleConnect } from '@/lib/pluggy-connect'
 
+interface Transaction {
+  id: string
+  description: string
+  category?: string | null
+  amount: number
+  date: string
+  currency?: string
+  accountId?: string
+  raw?: any
+  isRecurring?: boolean
+  createdAt?: string
+  providerCategoryName?: string
+}
+
+const parseDateValue = (value: unknown): string => {
+  if (!value) {
+    return new Date().toISOString()
+  }
+
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  const parsed = new Date(value as string)
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString()
+  }
+
+  return new Date().toISOString()
+}
+
+const formatDateForInput = (value?: string) => {
+  if (!value) {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const parsed = new Date(value)
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().split('T')[0]
+  }
+
+  const match = value.match(/^\d{4}-\d{2}-\d{2}/)
+  if (match) {
+    return match[0]
+  }
+
+  return new Date().toISOString().split('T')[0]
+}
+
+const normalizeTransaction = (transaction: any): Transaction => ({
+  ...transaction,
+  id: transaction.id,
+  description: transaction.description ?? '',
+  category: transaction.category ?? '',
+  amount: Number(transaction.amount ?? 0),
+  date: parseDateValue(transaction.date),
+})
+
+const toTransactionFormData = (transaction: Transaction): TransactionFormData => ({
+  id: transaction.id,
+  description: transaction.description ?? '',
+  category: transaction.category ?? '',
+  amount: transaction.amount,
+  date: formatDateForInput(transaction.date),
+})
+
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<any[]>([])
   const [goals, setGoals] = useState<any[]>([])
   const [subscriptions, setSubscriptions] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
   const [sdkReady, setSdkReady] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false)
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
+  const [transactionFormData, setTransactionFormData] = useState<TransactionFormData | null>(null)
+  const [loadingTransactionForm, setLoadingTransactionForm] = useState(false)
+  const [savingTransaction, setSavingTransaction] = useState(false)
   const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
   const { toast } = useToast()
@@ -63,7 +139,7 @@ export default function Dashboard() {
       if (r.ok) {
         const json = await r.json()
         setAccounts((json.accounts || []).map((a: any) => ({ ...a, balance: Number(a.balance) })))
-        setTransactions((json.transactions || []).map((t: any) => ({ ...t, amount: Number(t.amount) })))
+        setTransactions((json.transactions || []).map((t: any) => normalizeTransaction(t)))
       }
 
       // Load all finance data in parallel
@@ -126,6 +202,101 @@ export default function Dashboard() {
 
   const handleConnect = createHandleConnect({ toast, onAfterSync: loadData })
 
+  const closeTransactionModal = () => {
+    setIsTransactionModalOpen(false)
+    setSelectedTransactionId(null)
+    setTransactionFormData(null)
+    setLoadingTransactionForm(false)
+    setSavingTransaction(false)
+  }
+
+  const handleOpenTransactionModal = async (transactionId: string) => {
+    const existingTransaction = transactions.find((transaction) => transaction.id === transactionId)
+    setSelectedTransactionId(transactionId)
+
+    if (existingTransaction) {
+      setTransactionFormData(toTransactionFormData(existingTransaction))
+    } else {
+      setTransactionFormData(null)
+    }
+
+    setIsTransactionModalOpen(true)
+    setLoadingTransactionForm(!existingTransaction)
+
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load transaction')
+      }
+
+      const data = await response.json()
+      const normalized = normalizeTransaction(data)
+      setTransactionFormData(toTransactionFormData(normalized))
+    } catch (error) {
+      console.error('Erro ao carregar transação:', error)
+      toast.error(
+        'Erro ao carregar transação',
+        'Não foi possível carregar os dados da transação selecionada.'
+      )
+      if (!existingTransaction) {
+        closeTransactionModal()
+      }
+    } finally {
+      setLoadingTransactionForm(false)
+    }
+  }
+
+  const handleUpdateTransaction = async (values: TransactionFormData) => {
+    if (!selectedTransactionId) {
+      return
+    }
+
+    setSavingTransaction(true)
+
+    try {
+      const trimmedCategory =
+        typeof values.category === 'string' ? values.category.trim() : ''
+
+      const response = await fetch(`/api/transactions/${selectedTransactionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: values.description.trim(),
+          category: trimmedCategory || null,
+          amount: values.amount,
+          date: values.date,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update transaction')
+      }
+
+      const data = await response.json()
+      const normalized = normalizeTransaction(data)
+
+      setTransactions((prev) =>
+        prev.map((transaction) =>
+          transaction.id === normalized.id ? { ...transaction, ...normalized } : transaction
+        )
+      )
+
+      toast.success(
+        'Transação atualizada',
+        'As alterações foram salvas com sucesso.'
+      )
+
+      closeTransactionModal()
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error)
+      toast.error(
+        'Erro ao atualizar transação',
+        'Não foi possível salvar as alterações. Tente novamente.'
+      )
+    } finally {
+      setSavingTransaction(false)
+    }
+  }
 
   const balanceData = transactions
     .slice()
@@ -403,13 +574,26 @@ export default function Dashboard() {
                 {transactions.slice(0, 10).map((t) => {
                   const currencyData = formatCurrencyWithSign(t.amount)
                   return (
-                    <li key={t.id} className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded">
+                    <li
+                      key={t.id}
+                      className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded"
+                    >
                       <div>
                         <div className="font-medium">{t.description}</div>
                         <div className="text-slate-400 text-xs">{formatDate(t.date)}</div>
                       </div>
-                      <div className={`font-semibold ${currencyData.className}`}>
-                        {currencyData.value}
+                      <div className="flex items-center gap-3">
+                        <div className={`font-semibold ${currencyData.className}`}>
+                          {currencyData.value}
+                        </div>
+                        <LiquidButton
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-3 py-1"
+                          onClick={() => handleOpenTransactionModal(t.id)}
+                        >
+                          Editar
+                        </LiquidButton>
                       </div>
                     </li>
                   )
@@ -486,6 +670,16 @@ export default function Dashboard() {
 
       {/* Novos componentes liquid glass disponíveis em components/ui/liquid-glass-button.tsx */}
       </div>
+
+      {isTransactionModalOpen && (
+        <TransactionForm
+          transaction={transactionFormData ?? undefined}
+          onSubmit={handleUpdateTransaction}
+          onCancel={closeTransactionModal}
+          loading={loadingTransactionForm}
+          submitting={savingTransaction}
+        />
+      )}
     </motion.div>
   )
 }
