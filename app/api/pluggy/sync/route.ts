@@ -4,12 +4,15 @@ import { encryptJSON, decryptJSON } from '@/lib/crypto'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { ensureUser } from '@/lib/ensure-user'
 
 export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { itemId } = await req.json()
   if (!itemId) return NextResponse.json({ error: 'itemId required' }, { status: 400 })
+
+  await ensureUser(userId)
 
   const accResp = await listAccounts({ itemId })
   const accounts = accResp.results || accResp
@@ -109,6 +112,8 @@ export async function DELETE(req: NextRequest) {
   if (!accountId) {
     return NextResponse.json({ error: 'accountId required' }, { status: 400 })
   }
+
+  await ensureUser(userId)
 
   const account = await prisma.bankAccount.findUnique({ where: { id: accountId } })
 
