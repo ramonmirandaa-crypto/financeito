@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { ensureUser } from '@/lib/ensure-user'
 
 const serializeTransaction = (transaction: any) => ({
   id: transaction.id,
@@ -52,6 +53,8 @@ export async function PUT(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+
+    await ensureUser(userId)
 
     const id = params.id
     const { description, category, amount, date } = await request.json()

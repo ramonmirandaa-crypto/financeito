@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
+import { ensureUser } from '@/lib/ensure-user'
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
     if (!title || !targetAmount || !targetDate) {
       return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 })
     }
+
+    await ensureUser(userId)
 
     const targetAmountNumber = Number(targetAmount)
     if (Number.isNaN(targetAmountNumber)) {

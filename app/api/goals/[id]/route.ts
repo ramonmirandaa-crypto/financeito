@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
+import { ensureUser } from '@/lib/ensure-user'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -8,6 +9,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+
+    await ensureUser(userId)
 
     const id = params.id
     const data = await request.json()
@@ -68,6 +71,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+
+    await ensureUser(userId)
 
     const id = params.id
 
