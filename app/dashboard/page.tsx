@@ -22,20 +22,21 @@ import { motion } from 'framer-motion'
 import { chartColors } from '@/lib/theme'
 import { QuickAccess, QuickAccessItem } from '@/components/quick-access'
 import { QuickActions, QuickAction } from '@/components/quick-actions'
-import { 
-  formatCurrency, 
-  formatDate, 
-  formatCurrencyWithSign, 
+import {
+  formatCurrency,
+  formatDate,
+  formatCurrencyWithSign,
   formatDateShort,
   isUpcoming,
-  isOverdue 
+  isOverdue
 } from '@/lib/format-utils'
 import { KPISkeleton, CardSkeleton, TransactionSkeleton, ChartSkeleton } from '@/components/ui/skeleton'
-import { 
-  EmptyAccounts, 
-  EmptyTransactions, 
-  EmptyUpcomingPayments 
+import {
+  EmptyAccounts,
+  EmptyTransactions,
+  EmptyUpcomingPayments
 } from '@/components/ui/empty-state'
+import { createHandleConnect } from '@/lib/pluggy-connect'
 
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<any[]>([])
@@ -123,50 +124,7 @@ export default function Dashboard() {
     return () => script?.removeEventListener('load', handler)
   }, [])
 
-  const handleConnect = async () => {
-    const r = await fetch('/api/pluggy/link-token', { method: 'POST' })
-    if (r.status === 401) {
-      window.location.href = '/login'
-      return
-    }
-    const json = await r.json()
-    const connectToken = json.connectToken || json.linkToken
-    // @ts-ignore
-    if (!(window as any).PluggyConnect) {
-      toast.warning(
-        'SDK ainda não está pronto',
-        'Aguarde alguns segundos enquanto carregamos o SDK de conexão bancária.'
-      )
-      return
-    }
-    const connect = new (window as any).PluggyConnect({ connectToken })
-    connect.onSuccess(async (item: any) => {
-      try {
-        const resp = await fetch('/api/pluggy/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId: item.id }),
-        })
-        if (resp.status === 401) {
-          window.location.href = '/login'
-          return
-        }
-        await loadData()
-        toast.success(
-          'Conta conectada com sucesso!',
-          'Suas transações bancárias foram sincronizadas e já estão disponíveis.',
-          { duration: 4000 }
-        )
-      } catch (error) {
-        toast.error(
-          'Erro na sincronização',
-          'Não foi possível sincronizar suas transações. Tente novamente.',
-          { duration: 5000 }
-        )
-      }
-    })
-    connect.init()
-  }
+  const handleConnect = createHandleConnect({ toast, onAfterSync: loadData })
 
 
   const balanceData = transactions

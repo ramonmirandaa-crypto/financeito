@@ -98,3 +98,35 @@ export async function GET(req: NextRequest) {
   }))
   return NextResponse.json({ accounts: accs, transactions: txs })
 }
+
+export async function DELETE(req: NextRequest) {
+  const { userId } = auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const accountId = searchParams.get('accountId')
+
+  if (!accountId) {
+    return NextResponse.json({ error: 'accountId required' }, { status: 400 })
+  }
+
+  const account = await prisma.bankAccount.findUnique({ where: { id: accountId } })
+
+  if (!account || account.userId !== userId) {
+    return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+  }
+
+  try {
+    await prisma.transaction.deleteMany({ where: { accountId, userId } })
+    await prisma.budgetItem.updateMany({
+      where: { accountId, budget: { userId } },
+      data: { accountId: null },
+    })
+    await prisma.bankAccount.delete({ where: { id: accountId } })
+  } catch (error) {
+    console.error('Erro ao desconectar conta Pluggy:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
+}
