@@ -225,12 +225,28 @@ export default function GoalsPage() {
                             <p className="text-sm text-slate-400 mt-1">{goal.description}</p>
                           )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span 
+                        <div className="flex items-center gap-2">
+                          <span
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: priorityColor }}
                           />
                           <span className="text-xs text-slate-400 capitalize">{goal.priority}</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingGoal(goal)}
+                            className="text-blue-400 hover:text-blue-300 text-xs"
+                            title="Editar"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingGoal(goal.id)}
+                            className="text-red-400 hover:text-red-300 text-xs"
+                            title="Excluir"
+                          >
+                            🗑️
+                          </button>
                         </div>
                       </div>
 
