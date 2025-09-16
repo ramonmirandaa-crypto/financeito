@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { LiquidInput } from '@/components/ui/liquid-input'
+import { formatDateToISODate } from '@/lib/format-utils'
 
 export interface TransactionFormData {
   id?: string
@@ -22,23 +23,7 @@ interface TransactionFormProps {
   submitting?: boolean
 }
 
-const getTodayInputValue = () => new Date().toISOString().split('T')[0]
-
-const ensureDateValue = (value?: string | null) => {
-  if (!value) return getTodayInputValue()
-
-  const parsed = new Date(value)
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toISOString().split('T')[0]
-  }
-
-  const match = value.match(/^\d{4}-\d{2}-\d{2}/)
-  if (match) {
-    return match[0]
-  }
-
-  return getTodayInputValue()
-}
+const ensureDateValue = (value?: string | null) => formatDateToISODate(value)
 
 export function TransactionForm({
   transaction,

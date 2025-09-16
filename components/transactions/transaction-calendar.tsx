@@ -13,13 +13,28 @@ interface TransactionCalendarProps {
   days: TransactionCalendarDay[]
 }
 
+const BRAZIL_TIME_ZONE = 'America/Sao_Paulo'
+
 const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', {
   weekday: 'short',
+  timeZone: BRAZIL_TIME_ZONE,
 })
 
 const monthFormatter = new Intl.DateTimeFormat('pt-BR', {
   month: 'short',
+  timeZone: BRAZIL_TIME_ZONE,
 })
+
+const parseToBrazilDate = (isoDate: string) => {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  if ([year, month, day].some((part) => Number.isNaN(part))) {
+    const fallback = new Date(isoDate)
+    return Number.isNaN(fallback.getTime()) ? new Date() : fallback
+  }
+
+  // Utiliza meio-dia UTC para garantir o mesmo dia em São Paulo independentemente do fuso do navegador.
+  return new Date(Date.UTC(year, month - 1, day, 12))
+}
 
 export function TransactionCalendar({ days }: TransactionCalendarProps) {
   if (!days || days.length === 0) {
@@ -36,11 +51,7 @@ export function TransactionCalendar({ days }: TransactionCalendarProps) {
     )
   }
 
-  const sortedDays = [...days].sort(
-    (a, b) =>
-      new Date(`${a.date}T00:00:00`).getTime() -
-      new Date(`${b.date}T00:00:00`).getTime()
-  )
+  const sortedDays = [...days].sort((a, b) => a.date.localeCompare(b.date))
 
   return (
     <div className="space-y-4">
@@ -60,11 +71,11 @@ export function TransactionCalendar({ days }: TransactionCalendarProps) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {sortedDays.map((day) => {
-          const displayDateString = `${day.date}T00:00:00`
-          const dayDate = new Date(displayDateString)
+          const dayDate = parseToBrazilDate(day.date)
           const weekDay = weekdayFormatter.format(dayDate).replace('.', '')
           const monthLabel = monthFormatter.format(dayDate).replace('.', '')
-          const dayNumber = dayDate.getDate().toString().padStart(2, '0')
+          const [, , dayPart] = day.date.split('-')
+          const dayNumber = (dayPart ?? dayDate.getUTCDate().toString()).padStart(2, '0')
           const balance = day.income - day.expense
           const total = day.income + day.expense
           const incomePercent = total > 0 ? (day.income / total) * 100 : 0
@@ -91,7 +102,7 @@ export function TransactionCalendar({ days }: TransactionCalendarProps) {
                       {monthLabel}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500">{formatDate(displayDateString)}</div>
+                  <div className="text-xs text-slate-500">{formatDate(dayDate)}</div>
                 </div>
                 <div
                   className={cn(
