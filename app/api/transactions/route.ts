@@ -16,38 +16,7 @@ const serializeTransaction = (transaction: any) => ({
   createdAt: transaction.createdAt.toISOString(),
 })
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { userId } = auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-
-    const transaction = await prisma.transaction.findFirst({
-      where: {
-        id: params.id,
-        userId,
-      },
-    })
-
-    if (!transaction) {
-      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
-    }
-
-    return NextResponse.json(serializeTransaction(transaction))
-  } catch (error) {
-    console.error('Erro ao buscar transação:', error)
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
-  }
-}
-
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const { userId } = auth()
     if (!userId) {
@@ -56,7 +25,6 @@ export async function PUT(
 
     await ensureUser(userId)
 
-    const id = params.id
     const { description, category, amount, date, accountId } = await request.json()
 
     if (typeof description !== 'string' || !description.trim()) {
@@ -100,34 +68,24 @@ export async function PUT(
       )
     }
 
-    const existingTransaction = await prisma.transaction.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    })
-
-    if (!existingTransaction) {
-      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
-    }
-
-    const updatedTransaction = await prisma.transaction.update({
-      where: { id },
+    const createdTransaction = await prisma.transaction.create({
       data: {
+        accountId: account.id,
+        userId,
         description: description.trim(),
         category:
           typeof category === 'string' && category.trim() !== ''
             ? category.trim()
             : null,
+        currency: account.currency || 'BRL',
         amount: new Prisma.Decimal(numericAmount),
         date: parsedDate,
-        accountId: account.id,
       },
     })
 
-    return NextResponse.json(serializeTransaction(updatedTransaction))
+    return NextResponse.json(serializeTransaction(createdTransaction), { status: 201 })
   } catch (error) {
-    console.error('Erro ao atualizar transação:', error)
+    console.error('Erro ao criar transação:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }

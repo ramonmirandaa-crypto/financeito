@@ -94,6 +94,7 @@ const toTransactionFormData = (transaction: Transaction): TransactionFormData =>
   category: transaction.category ?? '',
   amount: transaction.amount,
   date: formatDateToISODate(transaction.date),
+  accountId: transaction.accountId ?? '',
 })
 
 export default function Dashboard() {
@@ -233,6 +234,48 @@ export default function Dashboard() {
     }
   }
 
+  const handleCreateManualAccount = async () => {
+    try {
+      const response = await fetch('/api/bank-accounts/manual', { method: 'POST' })
+      const payload = await response.json().catch(() => null)
+
+      if (!response.ok || !payload) {
+        throw new Error((payload as any)?.error || 'Não foi possível criar uma conta manual.')
+      }
+
+      const normalizedAccount = {
+        ...payload,
+        balance: Number((payload as any)?.balance ?? 0),
+      }
+
+      setAccounts((prev) => {
+        const existing = prev.find((account) => account.id === normalizedAccount.id)
+        if (existing) {
+          return prev.map((account) =>
+            account.id === normalizedAccount.id ? { ...account, ...normalizedAccount } : account
+          )
+        }
+        return [...prev, normalizedAccount]
+      })
+
+      toast.success(
+        'Conta manual pronta',
+        'Uma conta manual padrão está disponível para suas transações.'
+      )
+
+      return normalizedAccount
+    } catch (error) {
+      console.error('Erro ao criar conta manual:', error)
+      toast.error(
+        'Erro ao criar conta manual',
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível criar uma conta manual. Tente novamente.'
+      )
+      throw error
+    }
+  }
+
   const handleUpdateTransaction = async (values: TransactionFormData) => {
     if (!selectedTransactionId) {
       return
@@ -252,15 +295,17 @@ export default function Dashboard() {
           category: trimmedCategory || null,
           amount: values.amount,
           date: values.date,
+          accountId: values.accountId,
         }),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to update transaction')
+      const payload = await response.json().catch(() => null)
+
+      if (!response.ok || !payload) {
+        throw new Error((payload as any)?.error || 'Não foi possível atualizar a transação.')
       }
 
-      const data = await response.json()
-      const normalized = normalizeTransaction(data)
+      const normalized = normalizeTransaction(payload)
 
       setTransactions((prev) =>
         prev.map((transaction) =>
@@ -278,7 +323,9 @@ export default function Dashboard() {
       console.error('Erro ao atualizar transação:', error)
       toast.error(
         'Erro ao atualizar transação',
-        'Não foi possível salvar as alterações. Tente novamente.'
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível salvar as alterações. Tente novamente.'
       )
     } finally {
       setSavingTransaction(false)
@@ -715,6 +762,8 @@ export default function Dashboard() {
           onCancel={closeTransactionModal}
           loading={loadingTransactionForm}
           submitting={savingTransaction}
+          accounts={accounts}
+          onCreateManualAccount={handleCreateManualAccount}
         />
       )}
     </motion.div>

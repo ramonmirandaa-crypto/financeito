@@ -13,6 +13,7 @@ export interface TransactionFormData {
   category?: string | null
   amount: number
   date: string
+  accountId: string
 }
 
 interface TransactionFormProps {
@@ -21,6 +22,8 @@ interface TransactionFormProps {
   onCancel: () => void
   loading?: boolean
   submitting?: boolean
+  accounts: Array<{ id: string; name: string }>
+  onCreateManualAccount: () => Promise<{ id: string; name: string }>
 }
 
 const ensureDateValue = (value?: string | null) => formatDateToISODate(value)
@@ -31,18 +34,22 @@ export function TransactionForm({
   onCancel,
   loading,
   submitting,
+  accounts,
+  onCreateManualAccount,
 }: TransactionFormProps) {
   const [formValues, setFormValues] = useState({
     id: transaction?.id,
     description: transaction?.description ?? '',
     category: transaction?.category ?? '',
     date: ensureDateValue(transaction?.date),
+    accountId: transaction?.accountId ?? '',
   })
   const [amountInput, setAmountInput] = useState(() =>
     transaction?.amount !== undefined && transaction?.amount !== null
       ? String(transaction.amount)
       : ''
   )
+  const [creatingManualAccount, setCreatingManualAccount] = useState(false)
 
   useEffect(() => {
     if (!transaction) return
@@ -52,6 +59,7 @@ export function TransactionForm({
       description: transaction.description ?? '',
       category: transaction.category ?? '',
       date: ensureDateValue(transaction.date),
+      accountId: transaction.accountId ?? '',
     })
 
     setAmountInput(
@@ -60,6 +68,16 @@ export function TransactionForm({
         : ''
     )
   }, [transaction])
+
+  useEffect(() => {
+    setFormValues((prev) => {
+      if (prev.accountId || accounts.length === 0) {
+        return prev
+      }
+
+      return { ...prev, accountId: accounts[0].id }
+    })
+  }, [accounts])
 
   const isSaving = Boolean(submitting)
   const showLoadingState = Boolean(loading && !transaction)
@@ -80,13 +98,36 @@ export function TransactionForm({
       return
     }
 
+    if (!formValues.accountId) {
+      window.alert('Selecione uma conta bancária para a transação.')
+      return
+    }
+
     onSubmit({
       id: formValues.id,
       description: trimmedDescription,
       category: formValues.category?.trim() || null,
       amount: normalizedAmount,
       date: formValues.date,
+      accountId: formValues.accountId,
     })
+  }
+
+  const handleCreateManualAccount = async () => {
+    if (creatingManualAccount) return
+
+    try {
+      setCreatingManualAccount(true)
+      const account = await onCreateManualAccount()
+      if (account?.id) {
+        setFormValues((prev) => ({ ...prev, accountId: account.id }))
+      }
+    } catch (error) {
+      console.error('Erro ao criar conta manual:', error)
+      window.alert('Não foi possível criar uma conta manual. Tente novamente.')
+    } finally {
+      setCreatingManualAccount(false)
+    }
   }
 
   return (
@@ -162,6 +203,61 @@ export function TransactionForm({
                   placeholder="Ex: Alimentação"
                   disabled={isSaving}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Conta *
+                </label>
+                {accounts.length > 0 ? (
+                  <div className="space-y-2">
+                    <select
+                      value={formValues.accountId}
+                      onChange={(event) =>
+                        setFormValues((prev) => ({
+                          ...prev,
+                          accountId: event.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 bg-slate-600/50 border border-slate-500 rounded text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      required
+                      disabled={isSaving || creatingManualAccount}
+                    >
+                      <option value="" disabled>
+                        Selecione uma conta
+                      </option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
+                    </select>
+                    <LiquidButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCreateManualAccount}
+                      disabled={isSaving || creatingManualAccount}
+                    >
+                      {creatingManualAccount
+                        ? 'Criando conta...'
+                        : 'Criar conta manual padrão'}
+                    </LiquidButton>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">
+                      Nenhuma conta disponível. Crie uma conta manual para continuar.
+                    </p>
+                    <LiquidButton
+                      type="button"
+                      onClick={handleCreateManualAccount}
+                      disabled={creatingManualAccount}
+                    >
+                      {creatingManualAccount ? 'Criando conta...' : 'Criar conta manual padrão'}
+                    </LiquidButton>
+                  </div>
+                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
