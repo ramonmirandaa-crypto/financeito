@@ -10,6 +10,7 @@ import { BudgetForm } from '@/components/forms/budget-form'
 import { Budget } from '@/types/budget'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import { chartColors } from '@/lib/theme'
+import { useToast } from '@/hooks/use-toast'
 
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -21,6 +22,24 @@ export default function BudgetPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+  const { toast } = useToast()
+
+  const handleUnauthorized = () => {
+    toast.error('Sessão expirada', 'Faça login novamente para continuar.')
+    router.push('/login')
+  }
+
+  const extractErrorMessage = async (res: Response) => {
+    try {
+      const data = await res.json()
+      if (typeof data === 'string') {
+        return data
+      }
+      return data?.message || data?.error
+    } catch {
+      return undefined
+    }
+  }
 
   useEffect(() => {
     loadBudgets()
@@ -45,12 +64,22 @@ export default function BudgetPage() {
   async function loadBudgets() {
     try {
       const res = await fetch('/api/budget')
-      if (res.ok) {
-        const data = await res.json()
-        setBudgets(data)
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleUnauthorized()
+          return
+        }
+
+        const message = await extractErrorMessage(res)
+        toast.error('Não foi possível carregar os orçamentos.', message ?? 'Tente novamente em instantes.')
+        return
       }
+
+      const data = await res.json()
+      setBudgets(data)
     } catch (error) {
       console.error('Erro ao carregar orçamentos:', error)
+      toast.error('Erro ao carregar orçamentos.', 'Verifique sua conexão e tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -82,13 +111,23 @@ export default function BudgetPage() {
         body: JSON.stringify(payload)
       })
 
-      if (res.ok) {
-        const newBudget = await res.json()
-        setBudgets(prev => [newBudget, ...prev])
-        setShowCreateForm(false)
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleUnauthorized()
+          return
+        }
+
+        const message = await extractErrorMessage(res)
+        toast.error('Não foi possível criar o orçamento.', message ?? 'Tente novamente em instantes.')
+        return
       }
+
+      const newBudget = await res.json()
+      setBudgets(prev => [newBudget, ...prev])
+      setShowCreateForm(false)
     } catch (error) {
       console.error('Erro ao criar orçamento:', error)
+      toast.error('Erro ao criar orçamento.', 'Verifique sua conexão e tente novamente.')
     }
   }
 
@@ -104,13 +143,23 @@ export default function BudgetPage() {
         body: JSON.stringify(payload)
       })
 
-      if (res.ok) {
-        const updatedBudget = await res.json()
-        setBudgets(prev => prev.map(b => b.id === editingBudget.id ? updatedBudget : b))
-        setEditingBudget(null)
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleUnauthorized()
+          return
+        }
+
+        const message = await extractErrorMessage(res)
+        toast.error('Não foi possível atualizar o orçamento.', message ?? 'Tente novamente em instantes.')
+        return
       }
+
+      const updatedBudget = await res.json()
+      setBudgets(prev => prev.map(b => b.id === editingBudget.id ? updatedBudget : b))
+      setEditingBudget(null)
     } catch (error) {
       console.error('Erro ao atualizar orçamento:', error)
+      toast.error('Erro ao atualizar orçamento.', 'Verifique sua conexão e tente novamente.')
     }
   }
 
@@ -119,13 +168,24 @@ export default function BudgetPage() {
       const res = await fetch(`/api/budget/${budgetId}`, {
         method: 'DELETE'
       })
-      
-      if (res.ok) {
-        setBudgets(prev => prev.filter(b => b.id !== budgetId))
-        setDeletingBudget(null)
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleUnauthorized()
+          return
+        }
+
+        const message = await extractErrorMessage(res)
+        toast.error('Não foi possível excluir o orçamento.', message ?? 'Tente novamente em instantes.')
+        return
       }
+
+      setBudgets(prev => prev.filter(b => b.id !== budgetId))
     } catch (error) {
       console.error('Erro ao deletar orçamento:', error)
+      toast.error('Erro ao excluir orçamento.', 'Verifique sua conexão e tente novamente.')
+    } finally {
+      setDeletingBudget(null)
     }
   }
 
