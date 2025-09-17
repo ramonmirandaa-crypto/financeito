@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
@@ -15,10 +16,30 @@ export default function BudgetPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [deletingBudget, setDeletingBudget] = useState<string | null>(null)
+  const [hasOpenedFromQuery, setHasOpenedFromQuery] = useState(false)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     loadBudgets()
   }, [])
+
+  useEffect(() => {
+    if (hasOpenedFromQuery) {
+      return
+    }
+
+    if (searchParams?.get('create') === '1') {
+      setShowCreateForm(true)
+      setHasOpenedFromQuery(true)
+
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('create')
+      const queryString = params.toString()
+      router.replace(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false })
+    }
+  }, [hasOpenedFromQuery, pathname, router, searchParams])
 
   async function loadBudgets() {
     try {
