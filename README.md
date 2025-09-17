@@ -57,10 +57,10 @@ cp .env.example .env
 nano .env
 ```
 No arquivo `.env`, defina `ENCRYPTION_KEY_BASE64` com uma chave de 32 bytes codificada em Base64 para criptografia dos dados sensíveis.
-A aplicação não inicia sem uma `ENCRYPTION_KEY_BASE64` válida (deve decodificar para 32 bytes).
+Sem uma chave válida, as rotas de sincronização responderão com `503` exibindo o erro `ENCRYPTION_KEY_BASE64 ausente ou inválido. Configure uma chave Base64 de 32 bytes (256 bits) para habilitar a criptografia.`
 
 ### Variáveis Pluggy
-- `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET`: credenciais do painel Pluggy.
+- `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET`: credenciais do painel Pluggy. Sem elas, as rotas retornarão `503` com o erro `PLUGGY_CLIENT_ID e/ou PLUGGY_CLIENT_SECRET não foram configurados. Defina as variáveis de ambiente antes de usar a integração.`
 - `PLUGGY_BASE_URL` e `PLUGGY_ENV`: ajuste conforme o ambiente desejado.
 
 ### Variáveis Google (backups)
