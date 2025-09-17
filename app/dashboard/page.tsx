@@ -349,19 +349,19 @@ export default function Dashboard() {
 
   const quickAccessItems: QuickAccessItem[] = [
     {
+      title: 'Contas',
+      description: 'Resumo das suas contas conectadas',
+      href: '/dashboard#accounts',
+    },
+    {
       title: 'Transações',
       description: 'Histórico de movimentações',
       href: '/dashboard#transactions',
     },
     {
-      title: 'Cartões',
-      description: 'Gerencie seus cartões',
-      href: '/dashboard#cards',
-    },
-    {
-      title: 'Relatórios',
-      description: 'Relatórios detalhados',
-      href: '/dashboard#reports',
+      title: 'Evolução de Saldos',
+      description: 'Gráficos dos saldos ao longo do tempo',
+      href: '/dashboard#balance-evolution',
     },
     { title: 'Orçamentos', description: 'Planeje seus gastos', href: '/budget' },
     { title: 'Metas', description: 'Acompanhe seus objetivos', href: '/goals' },
@@ -415,6 +415,7 @@ export default function Dashboard() {
       .filter(l => l.dueDate && isUpcoming(l.dueDate, 7) && !l.isPaid)
       .map(l => ({ type: 'Empréstimo', name: l.description, date: l.dueDate, amount: l.amount }))
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const hasUpcomingPayments = upcomingPayments.length > 0
 
   return (
     <motion.div
@@ -465,264 +466,292 @@ export default function Dashboard() {
       )}
 
       {/* Próximos Vencimentos */}
-      {loading ? (
-        <CardSkeleton />
-      ) : upcomingPayments.length > 0 ? (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <LiquidCard>
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <span className="text-yellow-400 mr-2">⚠️</span>
-              Próximos Vencimentos
-            </h2>
-            <div className="space-y-2">
-              {upcomingPayments.slice(0, 5).map((payment, index) => {
-                const status = isOverdue(payment.date) ? 'Vencido' : 
-                             isUpcoming(payment.date, 1) ? 'Hoje/Amanhã' : 'Próximo'
-                return (
-                  <div key={index} className="flex justify-between items-center p-2 bg-card-glass/30 rounded-lg">
-                    <div>
-                      <span className="font-medium">{payment.name}</span>
-                      <span className="text-slate-400 text-sm ml-2">({payment.type})</span>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-semibold ${
-                        isOverdue(payment.date) ? 'text-red-400' : 
-                        isUpcoming(payment.date, 1) ? 'text-yellow-400' : 'text-blue-400'
-                      }`}>
-                        {formatDate(payment.date)}
+      <section id="upcoming-payments">
+        {loading ? (
+          <CardSkeleton />
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <LiquidCard>
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <span
+                  className={`${
+                    hasUpcomingPayments ? 'text-yellow-400' : 'text-green-400'
+                  } mr-2`}
+                >
+                  {hasUpcomingPayments ? '⚠️' : '✅'}
+                </span>
+                Próximos Vencimentos
+              </h2>
+              {hasUpcomingPayments ? (
+                <div className="space-y-2">
+                  {upcomingPayments.slice(0, 5).map((payment, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-2 bg-card-glass/30 rounded-lg"
+                    >
+                      <div>
+                        <span className="font-medium">{payment.name}</span>
+                        <span className="text-slate-400 text-sm ml-2">({payment.type})</span>
                       </div>
-                      <div className="text-sm text-slate-300">
-                        {formatCurrency(payment.amount)}
+                      <div className="text-right">
+                        <div
+                          className={`font-semibold ${
+                            isOverdue(payment.date)
+                              ? 'text-red-400'
+                              : isUpcoming(payment.date, 1)
+                                ? 'text-yellow-400'
+                                : 'text-blue-400'
+                          }`}
+                        >
+                          {formatDate(payment.date)}
+                        </div>
+                        <div className="text-sm text-slate-300">
+                          {formatCurrency(payment.amount)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          </LiquidCard>
-        </motion.div>
-      ) : !loading && (
-        <LiquidCard>
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <span className="text-green-400 mr-2">✅</span>
-            Próximos Vencimentos
-          </h2>
-          <EmptyUpcomingPayments />
-        </LiquidCard>
-      )}
+                  ))}
+                </div>
+              ) : (
+                <EmptyUpcomingPayments />
+              )}
+            </LiquidCard>
+          </motion.div>
+        )}
+      </section>
 
       <QuickActions actions={quickActions} />
       <QuickAccess items={quickAccessItems} />
       <div className="grid md:grid-cols-2 gap-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <LiquidCard>
-          <h2 className="text-xl font-semibold mb-2">Contas</h2>
-          {loading ? (
-            <>
+        <motion.section
+          id="accounts"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <LiquidCard>
+            <h2 className="text-xl font-semibold mb-2">Contas</h2>
+            {loading ? (
+              <>
+                <ChartSkeleton height="200px" />
+                <div className="mt-4 space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex justify-between">
+                      <div className="bg-card-glass/30 h-4 w-24 rounded animate-pulse"></div>
+                      <div className="bg-card-glass/30 h-4 w-16 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : accounts.length === 0 ? (
+              <EmptyAccounts onConnect={handleConnect} />
+            ) : (
+              <>
+                <div className="mb-4" style={{ width: '100%', height: 200 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                        <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
+                          {accounts.map((_, i) => (
+                            <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                          ))}
+                        </Pie>
+                      <Tooltip
+                        formatter={(value, name) => [formatCurrency(Number(value)), name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="text-sm mb-4 space-y-1">
+                  {accounts.map((a) => (
+                    <li key={a.id} className="flex justify-between">
+                      <span>{a.name}</span>
+                      <span className="font-semibold">{formatCurrency(a.balance)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <LiquidButton onClick={handleConnect} disabled={!sdkReady || loading}>
+              {loading ? 'Carregando...' : 'Conectar Conta'}
+            </LiquidButton>
+          </LiquidCard>
+        </motion.section>
+
+        <motion.section
+          id="transactions"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <LiquidCard>
+            <h2 className="text-xl font-semibold mb-2">Transações</h2>
+            {loading ? (
+              <>
+                <ChartSkeleton height="200px" />
+                <div className="mt-4">
+                  <TransactionSkeleton />
+                </div>
+              </>
+            ) : transactions.length === 0 ? (
+              <EmptyTransactions onConnect={handleConnect} />
+            ) : (
+              <>
+                <div style={{ width: '100%', height: 200 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={transactions}>
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(d) => formatDateShort(d)}
+                        hide={transactions.length > 10}
+                      />
+                      <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
+                      <Tooltip
+                        labelFormatter={(d) => formatDate(d)}
+                        formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
+                      />
+                        <Bar dataKey="amount" fill={chartColors[0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="text-sm mt-4 space-y-1 max-h-48 overflow-auto">
+                  {transactions.slice(0, 10).map((t) => {
+                    const currencyData = formatCurrencyWithSign(t.amount)
+                    return (
+                      <li
+                        key={t.id}
+                        className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded"
+                      >
+                        <div>
+                          <div className="font-medium">{t.description}</div>
+                          <div className="text-slate-400 text-xs">{formatDate(t.date)}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={`font-semibold ${currencyData.className}`}>
+                            {currencyData.value}
+                          </div>
+                          <LiquidButton
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-3 py-1"
+                            onClick={() => handleOpenTransactionModal(t.id)}
+                          >
+                            Editar
+                          </LiquidButton>
+                        </div>
+                      </li>
+                    )
+                  })}
+                  {transactions.length > 10 && (
+                    <li className="text-center text-slate-400 text-xs pt-2">
+                      +{transactions.length - 10} transações adicionais
+                    </li>
+                  )}
+                </ul>
+              </>
+            )}
+          </LiquidCard>
+        </motion.section>
+
+        <motion.section
+          id="balance-evolution"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <LiquidCard>
+            <h2 className="text-xl font-semibold mb-2">Evolução de Saldos</h2>
+            {loading ? (
               <ChartSkeleton height="200px" />
-              <div className="mt-4 space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex justify-between">
-                    <div className="bg-card-glass/30 h-4 w-24 rounded animate-pulse"></div>
-                    <div className="bg-card-glass/30 h-4 w-16 rounded animate-pulse"></div>
-                  </div>
-                ))}
+            ) : balanceData.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <span className="text-4xl block mb-2">📈</span>
+                <p>Dados insuficientes para gerar gráfico</p>
+                <p className="text-sm">Adicione transações para ver a evolução</p>
               </div>
-            </>
-          ) : accounts.length === 0 ? (
-            <EmptyAccounts onConnect={handleConnect} />
-          ) : (
-            <>
-              <div className="mb-4" style={{ width: '100%', height: 200 }}>
+            ) : (
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <LineChart data={balanceData}>
+                    <XAxis dataKey="date" tickFormatter={(d) => formatDateShort(d)} />
+                    <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
+                    <Tooltip
+                      labelFormatter={(d) => formatDate(d)}
+                      formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
+                    />
+                      <Line type="monotone" dataKey="balance" stroke={chartColors[1]} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </LiquidCard>
+        </motion.section>
+
+        <motion.section
+          id="expenses-by-category"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <LiquidCard>
+            <h2 className="text-xl font-semibold mb-2">Despesas por Categoria</h2>
+            {loading ? (
+              <ChartSkeleton height="200px" />
+            ) : categoryData.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <span className="text-4xl block mb-2">🏷️</span>
+                <p>Nenhuma despesa por categoria</p>
+                <p className="text-sm">Adicione transações de despesas para ver o resumo</p>
+              </div>
+            ) : (
+              <div style={{ width: '100%', height: 200 }}>
                 <ResponsiveContainer>
                   <PieChart>
-                      <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
-                        {accounts.map((_, i) => (
+                      <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
+                        {categoryData.map((_, i) => (
                           <Cell key={i} fill={chartColors[i % chartColors.length]} />
                         ))}
                       </Pie>
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [formatCurrency(Number(value)), name]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="text-sm mb-4 space-y-1">
-                {accounts.map((a) => (
-                  <li key={a.id} className="flex justify-between">
-                    <span>{a.name}</span>
-                    <span className="font-semibold">{formatCurrency(a.balance)}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          <LiquidButton onClick={handleConnect} disabled={!sdkReady || loading}>
-            {loading ? 'Carregando...' : 'Conectar Conta'}
-          </LiquidButton>
-        </LiquidCard>
-      </motion.div>
+            )}
+          </LiquidCard>
+        </motion.section>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <LiquidCard>
-          <h2 className="text-xl font-semibold mb-2">Transações</h2>
-          {loading ? (
-            <>
-              <ChartSkeleton height="200px" />
-              <div className="mt-4">
-                <TransactionSkeleton />
-              </div>
-            </>
-          ) : transactions.length === 0 ? (
-            <EmptyTransactions onConnect={handleConnect} />
-          ) : (
-            <>
-              <div style={{ width: '100%', height: 200 }}>
-                <ResponsiveContainer>
-                  <BarChart data={transactions}>
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(d) => formatDateShort(d)}
-                      hide={transactions.length > 10}
-                    />
-                    <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
-                    <Tooltip 
-                      labelFormatter={(d) => formatDate(d)}
-                      formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
-                    />
-                      <Bar dataKey="amount" fill={chartColors[0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="text-sm mt-4 space-y-1 max-h-48 overflow-auto">
-                {transactions.slice(0, 10).map((t) => {
-                  const currencyData = formatCurrencyWithSign(t.amount)
-                  return (
-                    <li
-                      key={t.id}
-                      className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded"
-                    >
-                      <div>
-                        <div className="font-medium">{t.description}</div>
-                        <div className="text-slate-400 text-xs">{formatDate(t.date)}</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className={`font-semibold ${currencyData.className}`}>
-                          {currencyData.value}
-                        </div>
-                        <LiquidButton
-                          size="sm"
-                          variant="outline"
-                          className="text-xs px-3 py-1"
-                          onClick={() => handleOpenTransactionModal(t.id)}
-                        >
-                          Editar
-                        </LiquidButton>
-                      </div>
-                    </li>
-                  )
-                })}
-                {transactions.length > 10 && (
-                  <li className="text-center text-slate-400 text-xs pt-2">
-                    +{transactions.length - 10} transações adicionais
-                  </li>
-                )}
-              </ul>
-            </>
-          )}
-        </LiquidCard>
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <LiquidCard>
-          <h2 className="text-xl font-semibold mb-2">Evolução de Saldos</h2>
-          {loading ? (
-            <ChartSkeleton height="200px" />
-          ) : balanceData.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
-              <span className="text-4xl block mb-2">📈</span>
-              <p>Dados insuficientes para gerar gráfico</p>
-              <p className="text-sm">Adicione transações para ver a evolução</p>
-            </div>
-          ) : (
-            <div style={{ width: '100%', height: 200 }}>
-              <ResponsiveContainer>
-                <LineChart data={balanceData}>
-                  <XAxis dataKey="date" tickFormatter={(d) => formatDateShort(d)} />
-                  <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
-                  <Tooltip 
-                    labelFormatter={(d) => formatDate(d)}
-                    formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
-                  />
-                    <Line type="monotone" dataKey="balance" stroke={chartColors[1]} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </LiquidCard>
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <LiquidCard>
-          <h2 className="text-xl font-semibold mb-2">Despesas por Categoria</h2>
-          {loading ? (
-            <ChartSkeleton height="200px" />
-          ) : categoryData.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
-              <span className="text-4xl block mb-2">🏷️</span>
-              <p>Nenhuma despesa por categoria</p>
-              <p className="text-sm">Adicione transações de despesas para ver o resumo</p>
-            </div>
-          ) : (
-            <div style={{ width: '100%', height: 200 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                    <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
-                      {categoryData.map((_, i) => (
-                        <Cell key={i} fill={chartColors[i % chartColors.length]} />
-                      ))}
-                    </Pie>
-                  <Tooltip 
-                    formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </LiquidCard>
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <LiquidCard>
-          <h2 className="text-xl font-semibold">Calendário Financeiro</h2>
-          <p className="text-sm text-slate-400 mt-1 mb-4">
-            Acompanhe o total diário de receitas e despesas.
-          </p>
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="rounded-2xl border border-card-border/60 bg-card-glass/40 p-4"
-                >
-                  <div className="mb-3 h-4 w-24 rounded bg-card-glass/60 animate-pulse" />
-                  <div className="mb-4 flex gap-3">
-                    <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
-                    <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
+        <motion.section
+          id="financial-calendar"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <LiquidCard>
+            <h2 className="text-xl font-semibold">Calendário Financeiro</h2>
+            <p className="text-sm text-slate-400 mt-1 mb-4">
+              Acompanhe o total diário de receitas e despesas.
+            </p>
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl border border-card-border/60 bg-card-glass/40 p-4"
+                  >
+                    <div className="mb-3 h-4 w-24 rounded bg-card-glass/60 animate-pulse" />
+                    <div className="mb-4 flex gap-3">
+                      <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
+                      <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-card-glass/60 animate-pulse" />
                   </div>
-                  <div className="h-2 w-full rounded-full bg-card-glass/60 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <TransactionCalendar days={calendarData} />
-          )}
-        </LiquidCard>
-      </motion.div>
+                ))}
+              </div>
+            ) : (
+              <TransactionCalendar days={calendarData} />
+            )}
+          </LiquidCard>
+        </motion.section>
 
       {/* Novos componentes liquid glass disponíveis em components/ui/liquid-glass-button.tsx */}
       </div>
