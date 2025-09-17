@@ -34,6 +34,20 @@ const ensureManualAccount = async (userId: string) => {
       name: 'Conta Manual',
       currency: 'BRL',
       balance: new Prisma.Decimal(0),
+      providerItem: 'Conta Manual',
+      dataEnc: JSON.stringify({ type: 'Conta Manual' }),
+    },
+  })
+}
+
+const adjustManualAccountBalance = async (
+  accountId: string,
+  amount: number
+) => {
+  await prisma.bankAccount.update({
+    where: { id: accountId },
+    data: {
+      balance: { increment: new Prisma.Decimal(amount) },
     },
   })
 }
@@ -71,16 +85,33 @@ export async function POST(request: NextRequest) {
 
     await ensureUser(userId)
 
+    const trimmedAccountId =
+      typeof accountId === 'string' && accountId.trim() !== ''
+        ? accountId.trim()
+        : ''
+
     let targetAccount
-    if (typeof accountId === 'string' && accountId.trim()) {
+    if (trimmedAccountId) {
       targetAccount = await prisma.bankAccount.findFirst({
-        where: { id: accountId.trim(), userId },
+        where: { id: trimmedAccountId, userId },
       })
 
       if (!targetAccount) {
         return NextResponse.json({ error: 'Conta bancária inválida' }, { status: 400 })
       }
     } else {
+      const existingManualAccount = await prisma.bankAccount.findFirst({
+        where: { userId, provider: 'manual' },
+        orderBy: { createdAt: 'asc' },
+      })
+
+      if (existingManualAccount) {
+        return NextResponse.json(
+          { error: 'Selecione uma conta manual para registrar a transação.' },
+          { status: 400 }
+        )
+      }
+
       targetAccount = await ensureManualAccount(userId)
     }
 
@@ -98,6 +129,10 @@ export async function POST(request: NextRequest) {
         date: parsedDate,
       },
     })
+
+    if (targetAccount.provider === 'manual') {
+      await adjustManualAccountBalance(targetAccount.id, numericAmount)
+    }
 
     return NextResponse.json(serializeTransaction(transaction), { status: 201 })
   } catch (error) {
