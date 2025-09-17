@@ -25,11 +25,16 @@ export function createHandleConnect({ toast, onAfterSync }: CreateHandleConnectO
       }
 
       if (!response.ok) {
-        toast.error(
-          'Erro na conexão',
-          'Não foi possível iniciar a conexão bancária. Tente novamente em instantes.',
-          { duration: 5000 }
-        )
+        let message = 'Não foi possível iniciar a conexão bancária. Verifique a configuração das variáveis do Pluggy.'
+        try {
+          const data = await response.json()
+          if (data?.error) {
+            message = data.error
+          }
+        } catch (parseError) {
+          console.error('Falha ao interpretar resposta de erro (link-token):', parseError)
+        }
+        toast.error('Erro na conexão', message, { duration: 5000 })
         return
       }
 
@@ -71,7 +76,16 @@ export function createHandleConnect({ toast, onAfterSync }: CreateHandleConnectO
           }
 
           if (!resp.ok) {
-            throw new Error('Pluggy sync failed')
+            let syncMessage = 'Não foi possível sincronizar suas transações. Verifique a configuração da integração.'
+            try {
+              const data = await resp.json()
+              if (data?.error) {
+                syncMessage = data.error
+              }
+            } catch (parseError) {
+              console.error('Falha ao interpretar resposta de erro (sync):', parseError)
+            }
+            throw new Error(syncMessage)
           }
 
           await onAfterSync?.()
@@ -83,11 +97,11 @@ export function createHandleConnect({ toast, onAfterSync }: CreateHandleConnectO
           )
         } catch (error) {
           console.error('Erro ao sincronizar conta Pluggy:', error)
-          toast.error(
-            'Erro na sincronização',
-            'Não foi possível sincronizar suas transações. Tente novamente.',
-            { duration: 5000 }
-          )
+          const description =
+            error instanceof Error && error.message
+              ? error.message
+              : 'Não foi possível sincronizar suas transações. Tente novamente.'
+          toast.error('Erro na sincronização', description, { duration: 5000 })
         }
       })
 
@@ -103,11 +117,11 @@ export function createHandleConnect({ toast, onAfterSync }: CreateHandleConnectO
       connect.init()
     } catch (error) {
       console.error('Erro ao iniciar conexão Pluggy:', error)
-      toast.error(
-        'Erro na conexão',
-        'Não foi possível iniciar a conexão bancária. Tente novamente em instantes.',
-        { duration: 5000 }
-      )
+      const description =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Não foi possível iniciar a conexão bancária. Tente novamente em instantes.'
+      toast.error('Erro na conexão', description, { duration: 5000 })
     }
   }
 }

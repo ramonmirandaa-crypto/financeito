@@ -45,7 +45,16 @@ export default function IntegrationsPage() {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to load accounts')
+        let message = 'Não foi possível carregar suas contas conectadas. Verifique a configuração da integração.'
+        try {
+          const data = await response.json()
+          if (data?.error) {
+            message = data.error
+          }
+        } catch (parseError) {
+          console.error('Falha ao interpretar resposta de erro do Pluggy:', parseError)
+        }
+        throw new Error(message)
       }
 
       const json = await response.json()
@@ -57,11 +66,11 @@ export default function IntegrationsPage() {
       setAccounts(parsedAccounts)
     } catch (error) {
       console.error('Erro ao carregar contas Pluggy:', error)
-      toast.error(
-        'Erro ao carregar contas',
-        'Não foi possível carregar suas contas conectadas. Tente novamente em instantes.',
-        { duration: 5000 }
-      )
+      const description =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Não foi possível carregar suas contas conectadas. Tente novamente em instantes.'
+      toast.error('Erro ao carregar contas', description, { duration: 5000 })
     } finally {
       if (silent) {
         setRefreshing(false)
