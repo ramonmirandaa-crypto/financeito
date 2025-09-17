@@ -376,8 +376,8 @@ export default function Dashboard() {
   const quickActions: QuickAction[] = [
     { title: 'Nova Transação', onClick: handleOpenNewTransactionModal },
     { title: 'Conectar Conta', onClick: handleConnect },
-    { title: 'Adicionar Meta', href: '/goals/new' },
-    { title: 'Novo Orçamento', href: '/budget/new' },
+    { title: 'Adicionar Meta', onClick: () => router.push('/goals?create=1') },
+    { title: 'Novo Orçamento', onClick: () => router.push('/budget?create=1') },
   ]
 
   // Calcular KPIs principais
