@@ -25,6 +25,25 @@ interface TransactionFormProps {
 
 const ensureDateValue = (value?: string | null) => formatDateToISODate(value)
 
+type FormState = {
+  id?: string
+  description: string
+  category: string
+  date: string
+}
+
+const createInitialFormState = (transaction?: TransactionFormData | null): FormState => ({
+  id: transaction?.id,
+  description: transaction?.description ?? '',
+  category: transaction?.category ?? '',
+  date: ensureDateValue(transaction?.date),
+})
+
+const createInitialAmount = (transaction?: TransactionFormData | null) =>
+  transaction?.amount !== undefined && transaction?.amount !== null
+    ? String(transaction.amount)
+    : ''
+
 export function TransactionForm({
   transaction,
   onSubmit,
@@ -32,33 +51,24 @@ export function TransactionForm({
   loading,
   submitting,
 }: TransactionFormProps) {
-  const [formValues, setFormValues] = useState({
-    id: transaction?.id,
-    description: transaction?.description ?? '',
-    category: transaction?.category ?? '',
-    date: ensureDateValue(transaction?.date),
-  })
-  const [amountInput, setAmountInput] = useState(() =>
-    transaction?.amount !== undefined && transaction?.amount !== null
-      ? String(transaction.amount)
-      : ''
+  const [formValues, setFormValues] = useState<FormState>(() =>
+    createInitialFormState(transaction)
+  )
+  const [amountInput, setAmountInput] = useState<string>(() =>
+    createInitialAmount(transaction)
   )
 
+  const isEditing = Boolean(formValues.id)
+
   useEffect(() => {
-    if (!transaction) return
+    if (!transaction) {
+      setFormValues(createInitialFormState(null))
+      setAmountInput('')
+      return
+    }
 
-    setFormValues({
-      id: transaction.id,
-      description: transaction.description ?? '',
-      category: transaction.category ?? '',
-      date: ensureDateValue(transaction.date),
-    })
-
-    setAmountInput(
-      transaction.amount !== undefined && transaction.amount !== null
-        ? String(transaction.amount)
-        : ''
-    )
+    setFormValues(createInitialFormState(transaction))
+    setAmountInput(createInitialAmount(transaction))
   }, [transaction])
 
   const isSaving = Boolean(submitting)
@@ -80,13 +90,18 @@ export function TransactionForm({
       return
     }
 
-    onSubmit({
-      id: formValues.id,
+    const payload: TransactionFormData = {
       description: trimmedDescription,
       category: formValues.category?.trim() || null,
       amount: normalizedAmount,
       date: formValues.date,
-    })
+    }
+
+    if (formValues.id) {
+      payload.id = formValues.id
+    }
+
+    onSubmit(payload)
   }
 
   return (
@@ -115,7 +130,7 @@ export function TransactionForm({
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xl font-semibold text-white">
-                  {transaction?.id ? 'Editar Transação' : 'Transação'}
+                  {isEditing ? 'Editar Transação' : 'Nova Transação'}
                 </h3>
                 <button
                   type="button"
@@ -210,7 +225,11 @@ export function TransactionForm({
                   Cancelar
                 </LiquidButton>
                 <LiquidButton type="submit" disabled={isSaving}>
-                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                  {isSaving
+                    ? 'Salvando...'
+                    : isEditing
+                      ? 'Salvar Alterações'
+                      : 'Adicionar Transação'}
                 </LiquidButton>
               </div>
             </form>
