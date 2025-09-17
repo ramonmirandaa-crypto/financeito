@@ -4,6 +4,18 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
 
+const adjustManualAccountBalance = async (
+  accountId: string,
+  amount: number
+) => {
+  await prisma.bankAccount.update({
+    where: { id: accountId },
+    data: {
+      balance: { increment: new Prisma.Decimal(amount) },
+    },
+  })
+}
+
 const serializeTransaction = (transaction: any) => ({
   id: transaction.id,
   accountId: transaction.accountId,
@@ -57,7 +69,7 @@ export async function PUT(
     await ensureUser(userId)
 
     const id = params.id
-    const { description, category, amount, date } = await request.json()
+    const { description, category, amount, date, accountId } = await request.json()
 
     if (typeof description !== 'string' || !description.trim()) {
       return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 })
@@ -86,15 +98,57 @@ export async function PUT(
         id,
         userId,
       },
+      include: { bankAccount: true },
     })
 
     if (!existingTransaction) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
+    const trimmedAccountId =
+      typeof accountId === 'string' && accountId.trim() !== ''
+        ? accountId.trim()
+        : ''
+
+    let targetAccount = existingTransaction.bankAccount
+
+    if (trimmedAccountId) {
+      targetAccount = await prisma.bankAccount.findFirst({
+        where: { id: trimmedAccountId, userId },
+      })
+
+      if (!targetAccount) {
+        return NextResponse.json({ error: 'Conta bancária inválida' }, { status: 400 })
+      }
+    } else if (!targetAccount) {
+      targetAccount = await prisma.bankAccount.findFirst({
+        where: { userId, provider: 'manual' },
+        orderBy: { createdAt: 'asc' },
+      })
+
+      if (!targetAccount) {
+        targetAccount = await prisma.bankAccount.create({
+          data: {
+            userId,
+            provider: 'manual',
+            name: 'Conta Manual',
+            currency: 'BRL',
+            balance: new Prisma.Decimal(0),
+            providerItem: 'Conta Manual',
+            dataEnc: JSON.stringify({ type: 'Conta Manual' }),
+          },
+        })
+      }
+    }
+
+    const previousAmount = Number(existingTransaction.amount)
+    const previousAccountId = existingTransaction.accountId
+    const previousAccountProvider = existingTransaction.bankAccount?.provider
+
     const updatedTransaction = await prisma.transaction.update({
       where: { id },
       data: {
+        accountId: targetAccount?.id ?? existingTransaction.accountId,
         description: description.trim(),
         category:
           typeof category === 'string' && category.trim() !== ''
@@ -102,8 +156,28 @@ export async function PUT(
             : null,
         amount: new Prisma.Decimal(numericAmount),
         date: parsedDate,
+        currency: targetAccount?.currency || existingTransaction.currency,
       },
     })
+
+    if (targetAccount) {
+      if (targetAccount.id === previousAccountId) {
+        if (targetAccount.provider === 'manual') {
+          await adjustManualAccountBalance(
+            targetAccount.id,
+            numericAmount - previousAmount
+          )
+        }
+      } else {
+        if (previousAccountProvider === 'manual') {
+          await adjustManualAccountBalance(previousAccountId, -previousAmount)
+        }
+
+        if (targetAccount.provider === 'manual') {
+          await adjustManualAccountBalance(targetAccount.id, numericAmount)
+        }
+      }
+    }
 
     return NextResponse.json(serializeTransaction(updatedTransaction))
   } catch (error) {

@@ -18,7 +18,11 @@ import {
 } from 'recharts'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
-import { TransactionForm, TransactionFormData } from '@/components/forms/transaction-form'
+import {
+  TransactionForm,
+  TransactionFormData,
+  ManualAccountOption,
+} from '@/components/forms/transaction-form'
 import { motion } from 'framer-motion'
 import { chartColors } from '@/lib/theme'
 import { QuickAccess, QuickAccessItem } from '@/components/quick-access'
@@ -43,6 +47,10 @@ import {
   TransactionCalendar,
   type TransactionCalendarDay,
 } from '@/components/transactions/transaction-calendar'
+import {
+  ManualAccountForm,
+  ManualAccountFormData,
+} from '@/components/forms/manual-account-form'
 
 interface Transaction {
   id: string
@@ -94,6 +102,7 @@ const toTransactionFormData = (transaction: Transaction): TransactionFormData =>
   category: transaction.category ?? '',
   amount: transaction.amount,
   date: formatDateToISODate(transaction.date),
+  accountId: transaction.accountId ?? null,
 })
 
 export default function Dashboard() {
@@ -110,12 +119,16 @@ export default function Dashboard() {
   const [transactionFormData, setTransactionFormData] = useState<TransactionFormData | null>(null)
   const [loadingTransactionForm, setLoadingTransactionForm] = useState(false)
   const [savingTransaction, setSavingTransaction] = useState(false)
+  const [manualAccountModalOpen, setManualAccountModalOpen] = useState(false)
+  const [savingManualAccount, setSavingManualAccount] = useState(false)
   const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
   const { toast } = useToast()
 
-  async function loadData() {
-    setLoading(true)
+  async function loadData({ silent = false }: { silent?: boolean } = {}) {
+    if (!silent) {
+      setLoading(true)
+    }
     try {
       // Load Pluggy data
       const r = await fetch('/api/pluggy/sync')
@@ -161,7 +174,9 @@ export default function Dashboard() {
         { duration: 5000 }
       )
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }
 
@@ -243,6 +258,9 @@ export default function Dashboard() {
 
   const handleSubmitTransaction = async (values: TransactionFormData) => {
     const isEditing = Boolean(selectedTransactionId)
+    const previousTransaction = isEditing
+      ? transactions.find((transaction) => transaction.id === selectedTransactionId)
+      : null
     setSavingTransaction(true)
 
     try {
@@ -259,6 +277,7 @@ export default function Dashboard() {
             category: trimmedCategory || null,
             amount: values.amount,
             date: values.date,
+            accountId: values.accountId || null,
           }),
         }
       )
@@ -282,6 +301,47 @@ export default function Dashboard() {
         )
       })
 
+      setAccounts((prev) => {
+        const previousManualAccountId =
+          previousTransaction && previousTransaction.accountId
+            ? prev.find(
+                (account) =>
+                  account.id === previousTransaction.accountId &&
+                  account.provider === 'manual'
+              )
+              ? previousTransaction.accountId
+              : null
+            : null
+        const previousAmount = Number(previousTransaction?.amount ?? 0)
+
+        return prev.map((account) => {
+          if (account.provider !== 'manual') {
+            return account
+          }
+
+          const currentBalance = Number(account.balance ?? 0)
+
+          if (account.id === normalized.accountId) {
+            const adjustment =
+              isEditing && previousManualAccountId === normalized.accountId
+                ? normalized.amount - previousAmount
+                : normalized.amount
+            return { ...account, balance: currentBalance + adjustment }
+          }
+
+          if (
+            isEditing &&
+            previousManualAccountId &&
+            account.id === previousManualAccountId &&
+            previousManualAccountId !== normalized.accountId
+          ) {
+            return { ...account, balance: currentBalance - previousAmount }
+          }
+
+          return account
+        })
+      })
+
       toast.success(
         isEditing ? 'Transação atualizada' : 'Transação criada',
         isEditing
@@ -290,6 +350,7 @@ export default function Dashboard() {
       )
 
       closeTransactionModal()
+      await loadData({ silent: true })
     } catch (error) {
       console.error('Erro ao salvar transação:', error)
       toast.error(
@@ -300,6 +361,78 @@ export default function Dashboard() {
       )
     } finally {
       setSavingTransaction(false)
+    }
+  }
+
+  const manualAccountOptions: ManualAccountOption[] = accounts
+    .filter((account) => account.provider === 'manual')
+    .map((account) => ({
+      id: account.id,
+      name: account.name,
+      currency: account.currency,
+      balance: Number(account.balance ?? 0),
+    }))
+
+  const handleOpenManualAccountModal = () => {
+    setManualAccountModalOpen(true)
+  }
+
+  const closeManualAccountModal = () => {
+    setManualAccountModalOpen(false)
+    setSavingManualAccount(false)
+  }
+
+  const handleSubmitManualAccount = async (values: ManualAccountFormData) => {
+    setSavingManualAccount(true)
+    try {
+      const response = await fetch('/api/manual-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: values.name,
+          type: values.type,
+          currency: values.currency,
+          balance: values.balance,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create manual account')
+      }
+
+      const data = await response.json()
+
+      setAccounts((prev) => [
+        {
+          id: data.id,
+          name: data.name,
+          provider: 'manual',
+          providerItem: data.type ?? null,
+          currency: data.currency,
+          balance: Number(data.balance ?? 0),
+          mask: null,
+          data: data.type ? { type: data.type } : null,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        },
+        ...prev,
+      ])
+
+      toast.success(
+        'Conta offline criada',
+        'Sua conta manual foi adicionada com sucesso.'
+      )
+
+      closeManualAccountModal()
+      await loadData({ silent: true })
+    } catch (error) {
+      console.error('Erro ao criar conta manual:', error)
+      toast.error(
+        'Erro ao criar conta manual',
+        'Não foi possível adicionar a conta offline. Tente novamente.'
+      )
+    } finally {
+      setSavingManualAccount(false)
     }
   }
 
@@ -380,6 +513,7 @@ export default function Dashboard() {
 
   const quickActions: QuickAction[] = [
     { title: 'Nova Transação', onClick: handleOpenNewTransactionModal },
+    { title: 'Nova Conta Offline', onClick: handleOpenManualAccountModal },
     { title: 'Conectar Conta', onClick: handleConnect },
     { title: 'Adicionar Meta', onClick: () => router.push('/goals?create=1') },
     { title: 'Novo Orçamento', onClick: () => router.push('/budget?create=1') },
@@ -768,6 +902,16 @@ export default function Dashboard() {
           onCancel={closeTransactionModal}
           loading={loadingTransactionForm}
           submitting={savingTransaction}
+          manualAccounts={manualAccountOptions}
+        />
+      )}
+      {manualAccountModalOpen && (
+        <ManualAccountForm
+          open={manualAccountModalOpen}
+          account={null}
+          onClose={closeManualAccountModal}
+          onSubmit={handleSubmitManualAccount}
+          submitting={savingManualAccount}
         />
       )}
     </motion.div>

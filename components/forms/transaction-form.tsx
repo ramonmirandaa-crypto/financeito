@@ -13,6 +13,7 @@ export interface TransactionFormData {
   category?: string | null
   amount: number
   date: string
+  accountId?: string | null
 }
 
 interface TransactionFormProps {
@@ -21,6 +22,7 @@ interface TransactionFormProps {
   onCancel: () => void
   loading?: boolean
   submitting?: boolean
+  manualAccounts: ManualAccountOption[]
 }
 
 const ensureDateValue = (value?: string | null) => formatDateToISODate(value)
@@ -30,13 +32,25 @@ type FormState = {
   description: string
   category: string
   date: string
+  accountId: string
 }
 
-const createInitialFormState = (transaction?: TransactionFormData | null): FormState => ({
+export interface ManualAccountOption {
+  id: string
+  name: string
+  currency?: string
+  balance?: number
+}
+
+const createInitialFormState = (
+  transaction: TransactionFormData | null | undefined,
+  defaultAccountId: string
+): FormState => ({
   id: transaction?.id,
   description: transaction?.description ?? '',
   category: transaction?.category ?? '',
   date: ensureDateValue(transaction?.date),
+  accountId: transaction?.accountId ?? defaultAccountId,
 })
 
 const createInitialAmount = (transaction?: TransactionFormData | null) =>
@@ -50,9 +64,11 @@ export function TransactionForm({
   onCancel,
   loading,
   submitting,
+  manualAccounts,
 }: TransactionFormProps) {
+  const defaultAccountId = manualAccounts[0]?.id ?? ''
   const [formValues, setFormValues] = useState<FormState>(() =>
-    createInitialFormState(transaction)
+    createInitialFormState(transaction, defaultAccountId)
   )
   const [amountInput, setAmountInput] = useState<string>(() =>
     createInitialAmount(transaction)
@@ -62,17 +78,35 @@ export function TransactionForm({
 
   useEffect(() => {
     if (!transaction) {
-      setFormValues(createInitialFormState(null))
+      setFormValues(createInitialFormState(null, manualAccounts[0]?.id ?? ''))
       setAmountInput('')
       return
     }
 
-    setFormValues(createInitialFormState(transaction))
+    setFormValues(createInitialFormState(transaction, manualAccounts[0]?.id ?? ''))
     setAmountInput(createInitialAmount(transaction))
-  }, [transaction])
+  }, [transaction, manualAccounts])
+
+  useEffect(() => {
+    if (transaction || formValues.accountId) {
+      return
+    }
+
+    if (manualAccounts.length > 0) {
+      setFormValues((prev) => ({
+        ...prev,
+        accountId: prev.accountId || manualAccounts[0].id,
+      }))
+    }
+  }, [manualAccounts, transaction, formValues.accountId])
 
   const isSaving = Boolean(submitting)
   const showLoadingState = Boolean(loading && !transaction)
+  const hasManualAccounts = manualAccounts.length > 0
+  const currentAccountIsManual = formValues.accountId
+    ? manualAccounts.some((account) => account.id === formValues.accountId)
+    : false
+  const allowNonManualSelection = Boolean(formValues.accountId && !currentAccountIsManual)
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -90,11 +124,18 @@ export function TransactionForm({
       return
     }
 
+    const selectedAccountId = formValues.accountId?.trim() || ''
+    if (hasManualAccounts && !selectedAccountId) {
+      window.alert('Selecione uma conta offline para registrar a transação.')
+      return
+    }
+
     const payload: TransactionFormData = {
       description: trimmedDescription,
       category: formValues.category?.trim() || null,
       amount: normalizedAmount,
       date: formValues.date,
+      accountId: selectedAccountId || null,
     }
 
     if (formValues.id) {
@@ -177,6 +218,54 @@ export function TransactionForm({
                   placeholder="Ex: Alimentação"
                   disabled={isSaving}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Conta offline {hasManualAccounts ? '*' : ''}
+                </label>
+                <select
+                  className="w-full rounded-md border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formValues.accountId}
+                  onChange={(event) =>
+                    setFormValues((prev) => ({
+                      ...prev,
+                      accountId: event.target.value,
+                    }))
+                  }
+                  required={hasManualAccounts && !allowNonManualSelection}
+                  disabled={
+                    isSaving || (!hasManualAccounts && !allowNonManualSelection)
+                  }
+                >
+                  <option value="">
+                    {hasManualAccounts
+                      ? 'Selecione a conta que receberá a transação'
+                      : 'Nenhuma conta manual disponível'}
+                  </option>
+                  {!currentAccountIsManual && formValues.accountId && (
+                    <option value={formValues.accountId} disabled>
+                      Conta conectada (somente leitura)
+                    </option>
+                  )}
+                  {manualAccounts.map((accountOption) => (
+                    <option key={accountOption.id} value={accountOption.id}>
+                      {accountOption.name}
+                    </option>
+                  ))}
+                </select>
+                {!hasManualAccounts && (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Crie uma conta offline para organizar seus lançamentos manuais.
+                    Caso continue, criaremos uma conta padrão automaticamente.
+                  </p>
+                )}
+                {allowNonManualSelection && (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Esta transação pertence a uma conta conectada. Se desejar, escolha
+                    uma conta offline para movê-la manualmente.
+                  </p>
+                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">

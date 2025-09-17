@@ -91,6 +91,16 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const parseManualMetadata = (value: string | null | undefined) => {
+  if (!value) return null
+  try {
+    return JSON.parse(value) as Record<string, unknown>
+  } catch (error) {
+    console.warn('Falha ao interpretar metadata de conta manual:', error)
+    return null
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { userId: uid } = auth()
   if (!uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -103,7 +113,12 @@ export async function GET(req: NextRequest) {
     })
     const accs = accounts.map((a) => ({
       ...a,
-      data: a.dataEnc ? decryptJSON(a.dataEnc) : null,
+      data:
+        a.provider === 'manual'
+          ? parseManualMetadata(a.dataEnc)
+          : a.dataEnc
+            ? decryptJSON(a.dataEnc)
+            : null,
     }))
     const txs = transactions.map((t) => ({
       ...t,
