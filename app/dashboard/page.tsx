@@ -370,6 +370,11 @@ export default function Dashboard() {
       description: 'Controle suas assinaturas',
       href: '/subscriptions',
     },
+    {
+      title: 'Integrações',
+      description: 'Gerencie conexões com bancos e serviços',
+      href: '/integrations',
+    },
     { title: 'Empréstimos', description: 'Gerencie seus empréstimos', href: '/loans' },
   ]
 
