@@ -197,6 +197,14 @@ export default function Dashboard() {
     setSavingTransaction(false)
   }
 
+  const handleOpenNewTransactionModal = () => {
+    setSelectedTransactionId(null)
+    setTransactionFormData(null)
+    setIsTransactionModalOpen(true)
+    setLoadingTransactionForm(false)
+    setSavingTransaction(false)
+  }
+
   const handleOpenTransactionModal = async (transactionId: string) => {
     const existingTransaction = transactions.find((transaction) => transaction.id === transactionId)
     setSelectedTransactionId(transactionId)
@@ -233,52 +241,62 @@ export default function Dashboard() {
     }
   }
 
-  const handleUpdateTransaction = async (values: TransactionFormData) => {
-    if (!selectedTransactionId) {
-      return
-    }
-
+  const handleSubmitTransaction = async (values: TransactionFormData) => {
+    const isEditing = Boolean(selectedTransactionId)
     setSavingTransaction(true)
 
     try {
       const trimmedCategory =
         typeof values.category === 'string' ? values.category.trim() : ''
 
-      const response = await fetch(`/api/transactions/${selectedTransactionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description: values.description.trim(),
-          category: trimmedCategory || null,
-          amount: values.amount,
-          date: values.date,
-        }),
-      })
+      const response = await fetch(
+        isEditing ? `/api/transactions/${selectedTransactionId}` : '/api/transactions',
+        {
+          method: isEditing ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: values.description.trim(),
+            category: trimmedCategory || null,
+            amount: values.amount,
+            date: values.date,
+          }),
+        }
+      )
 
       if (!response.ok) {
-        throw new Error('Failed to update transaction')
+        throw new Error('Failed to save transaction')
       }
 
       const data = await response.json()
       const normalized = normalizeTransaction(data)
 
-      setTransactions((prev) =>
-        prev.map((transaction) =>
-          transaction.id === normalized.id ? { ...transaction, ...normalized } : transaction
+      setTransactions((prev) => {
+        if (isEditing) {
+          return prev.map((transaction) =>
+            transaction.id === normalized.id ? { ...transaction, ...normalized } : transaction
+          )
+        }
+
+        return [normalized, ...prev].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         )
-      )
+      })
 
       toast.success(
-        'Transação atualizada',
-        'As alterações foram salvas com sucesso.'
+        isEditing ? 'Transação atualizada' : 'Transação criada',
+        isEditing
+          ? 'As alterações foram salvas com sucesso.'
+          : 'A transação foi adicionada com sucesso.'
       )
 
       closeTransactionModal()
     } catch (error) {
-      console.error('Erro ao atualizar transação:', error)
+      console.error('Erro ao salvar transação:', error)
       toast.error(
-        'Erro ao atualizar transação',
-        'Não foi possível salvar as alterações. Tente novamente.'
+        isEditing ? 'Erro ao atualizar transação' : 'Erro ao criar transação',
+        isEditing
+          ? 'Não foi possível salvar as alterações. Tente novamente.'
+          : 'Não foi possível registrar a transação. Tente novamente.'
       )
     } finally {
       setSavingTransaction(false)
@@ -356,6 +374,7 @@ export default function Dashboard() {
   ]
 
   const quickActions: QuickAction[] = [
+    { title: 'Nova Transação', onClick: handleOpenNewTransactionModal },
     { title: 'Conectar Conta', onClick: handleConnect },
     { title: 'Adicionar Meta', href: '/goals/new' },
     { title: 'Novo Orçamento', href: '/budget/new' },
@@ -711,7 +730,7 @@ export default function Dashboard() {
       {isTransactionModalOpen && (
         <TransactionForm
           transaction={transactionFormData ?? undefined}
-          onSubmit={handleUpdateTransaction}
+          onSubmit={handleSubmitTransaction}
           onCancel={closeTransactionModal}
           loading={loadingTransactionForm}
           submitting={savingTransaction}
