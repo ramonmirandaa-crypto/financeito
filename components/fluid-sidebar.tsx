@@ -1,14 +1,15 @@
 "use client"
 
 import { MenuItem, MenuContainer } from "@/components/ui/fluid-menu"
-import { 
-  Menu as MenuIcon, 
-  X, 
-  Home, 
-  PiggyBank, 
-  Target, 
-  CreditCard, 
-  TrendingUp 
+import {
+  Menu as MenuIcon,
+  X,
+  Home,
+  PiggyBank,
+  Target,
+  CreditCard,
+  TrendingUp,
+  Plug,
 } from "lucide-react"
 
 export default function FluidSidebar() {
@@ -17,6 +18,7 @@ export default function FluidSidebar() {
     { href: '/budget', label: 'Orçamento', icon: <PiggyBank size={20} strokeWidth={1.5} /> },
     { href: '/goals', label: 'Metas', icon: <Target size={20} strokeWidth={1.5} /> },
     { href: '/subscriptions', label: 'Assinaturas', icon: <CreditCard size={20} strokeWidth={1.5} /> },
+    { href: '/integrations', label: 'Integrações', icon: <Plug size={20} strokeWidth={1.5} /> },
     { href: '/loans', label: 'Empréstimos', icon: <TrendingUp size={20} strokeWidth={1.5} /> },
   ]
 
