@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { BudgetForm } from '@/components/forms/budget-form'
 import { Budget } from '@/types/budget'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
@@ -364,31 +365,12 @@ export default function BudgetPage() {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deletingBudget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <LiquidCard className="max-w-md w-full m-4">
-            <h3 className="text-xl font-semibold mb-4 text-white">Confirmar Exclusão</h3>
-            <p className="text-slate-400 mb-6">Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.</p>
-            <div className="flex gap-3">
-              <LiquidButton 
-                variant="secondary" 
-                onClick={() => setDeletingBudget(null)}
-                className="flex-1"
-              >
-                Cancelar
-              </LiquidButton>
-              <LiquidButton 
-                variant="primary" 
-                onClick={() => handleDeleteBudget(deletingBudget)}
-                className="flex-1 bg-red-500 hover:bg-red-600"
-              >
-                Excluir
-              </LiquidButton>
-            </div>
-          </LiquidCard>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deletingBudget)}
+        message="Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita."
+        onCancel={() => setDeletingBudget(null)}
+        onConfirm={() => handleDeleteBudget(deletingBudget!)}
+      />
     </div>
   )
 }
