@@ -1,6 +1,7 @@
 "use client"
 
 import { MenuItem, MenuContainer } from "@/components/ui/fluid-menu"
+import { useTheme } from "@/contexts/theme-context"
 import {
   Menu as MenuIcon,
   X,
@@ -10,9 +11,14 @@ import {
   CreditCard,
   TrendingUp,
   Plug,
+  Moon,
+  Sun,
 } from "lucide-react"
 
 export default function FluidSidebar() {
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
+
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <Home size={20} strokeWidth={1.5} /> },
     { href: '/budget', label: 'Orçamento', icon: <PiggyBank size={20} strokeWidth={1.5} /> },
@@ -55,6 +61,31 @@ export default function FluidSidebar() {
               label={item.label}
             />
           ))}
+          <MenuItem
+            onClick={toggleTheme}
+            index={navItems.length + 1}
+            label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+            icon={
+              <div className="relative flex h-6 w-6 items-center justify-center">
+                <Sun
+                  strokeWidth={1.5}
+                  className={`h-5 w-5 transition-all duration-300 ${
+                    isDark
+                      ? 'rotate-90 scale-0 opacity-0'
+                      : 'rotate-0 scale-100 opacity-100 text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.45)]'
+                  }`}
+                />
+                <Moon
+                  strokeWidth={1.5}
+                  className={`absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 transition-all duration-300 ${
+                    isDark
+                      ? 'rotate-0 scale-100 opacity-100 text-sky-300 drop-shadow-[0_0_10px_rgba(125,211,252,0.45)]'
+                      : '-rotate-90 scale-0 opacity-0'
+                  }`}
+                />
+              </div>
+            }
+          />
         </MenuContainer>
       </div>
     </div>
