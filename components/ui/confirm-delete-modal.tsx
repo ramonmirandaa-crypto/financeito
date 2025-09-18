@@ -37,18 +37,19 @@ export function ConfirmDeleteModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <LiquidCard
-        className="max-w-md w-full m-4"
+      <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
+        className="max-w-md w-full m-4"
       >
-        <h3 id={titleId} className="text-xl font-semibold mb-4 text-white">
-          {title}
-        </h3>
-        <p id={descriptionId} className="text-slate-400 mb-6">
-          {message}
+        <LiquidCard className="w-full">
+          <h3 id={titleId} className="text-xl font-semibold mb-4 text-white">
+            {title}
+          </h3>
+          <p id={descriptionId} className="text-slate-400 mb-6">
+            {message}
         </p>
         <div className="flex gap-3">
           <LiquidButton
@@ -66,7 +67,8 @@ export function ConfirmDeleteModal({
             {confirmLabel}
           </LiquidButton>
         </div>
-      </LiquidCard>
+        </LiquidCard>
+      </div>
     </div>
   )
 }

@@ -507,7 +507,7 @@ export async function DELETE(req: NextRequest) {
       data: { accountId: null },
     })
     if (account.provider === 'pluggy') {
-      const deletionFilters = [{ accountId }]
+      const deletionFilters: Prisma.PluggyResourceWhereInput[] = [{ accountId }]
       if (account.providerItem) {
         deletionFilters.push({ itemId: account.providerItem })
       }

@@ -110,7 +110,8 @@ export async function PUT(
         ? accountId.trim()
         : ''
 
-    let targetAccount = existingTransaction.bankAccount
+    let targetAccount: typeof existingTransaction.bankAccount | null =
+      existingTransaction.bankAccount
 
     if (trimmedAccountId) {
       targetAccount = await prisma.bankAccount.findFirst({
