@@ -21,7 +21,7 @@ export function EmptyState({
   onAction,
   actionHref,
   className = "",
-  disabled = false
+  disabled
 }: EmptyStateProps) {
   return (
     <motion.div
