@@ -136,6 +136,7 @@ model Loan {
   lenderContact String?  // Contato opcional
   type          String   // "lent" (emprestei para alguém) ou "borrowed" (peguei emprestado)
   interestRate  Decimal? @db.Decimal(5, 2) // Taxa de juros opcional
+  installmentCount Int? // Quantidade de parcelas (null para pagamento à vista)
   dueDate       DateTime?
   isPaid        Boolean  @default(false)
   paidAt        DateTime?

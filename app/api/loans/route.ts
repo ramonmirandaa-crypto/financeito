@@ -37,7 +37,18 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
-    const { title, description, amount, currency, lenderName, lenderContact, type, interestRate, dueDate } = data
+    const {
+      title,
+      description,
+      amount,
+      currency,
+      lenderName,
+      lenderContact,
+      type,
+      interestRate,
+      dueDate,
+      installmentCount,
+    } = data
 
     // Validate required fields
     if (!title || !amount || !lenderName || !type) {
@@ -64,6 +75,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let installmentCountNumber: number | null = null
+    if (installmentCount !== undefined && installmentCount !== null && `${installmentCount}`.trim() !== '') {
+      const parsedInstallmentCount = Number(installmentCount)
+      if (!Number.isInteger(parsedInstallmentCount) || parsedInstallmentCount <= 0) {
+        return NextResponse.json({ error: 'Campo installmentCount inválido' }, { status: 400 })
+      }
+      installmentCountNumber = parsedInstallmentCount
+    }
+
     // Create loan
     const loan = await prisma.loan.create({
       data: {
@@ -76,7 +96,8 @@ export async function POST(request: NextRequest) {
         lenderContact,
         type,
         interestRate: interestRateNumber,
-        dueDate: dueDate ? new Date(dueDate) : null
+        dueDate: dueDate ? new Date(dueDate) : null,
+        installmentCount: installmentCountNumber,
       }
     })
 
@@ -84,7 +105,7 @@ export async function POST(request: NextRequest) {
     const formattedLoan = {
       ...loan,
       amount: Number(loan.amount),
-      interestRate: loan.interestRate ? Number(loan.interestRate) : null
+      interestRate: loan.interestRate ? Number(loan.interestRate) : null,
     }
 
     return NextResponse.json(formattedLoan, { status: 201 })

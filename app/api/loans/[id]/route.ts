@@ -31,6 +31,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
     }
 
+    let installmentCountValue: number | null | undefined
+    if (data.installmentCount !== undefined) {
+      if (data.installmentCount === null || `${data.installmentCount}`.trim() === '') {
+        installmentCountValue = null
+      } else {
+        const parsedInstallmentCount = Number(data.installmentCount)
+        if (!Number.isInteger(parsedInstallmentCount) || parsedInstallmentCount <= 0) {
+          return NextResponse.json({ error: 'Campo installmentCount inválido' }, { status: 400 })
+        }
+        installmentCountValue = parsedInstallmentCount
+      }
+    }
+
     // Verify loan belongs to user
     const existingLoan = await prisma.loan.findFirst({
       where: { id, userId }
@@ -48,6 +61,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         amount: amountNumber,
         interestRate: interestRateNumber,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+        installmentCount: installmentCountValue,
         paidAt: data.isPaid && !existingLoan.isPaid ? new Date() : data.isPaid === false ? null : undefined
       }
     })
@@ -56,7 +70,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const formattedLoan = {
       ...loan,
       amount: Number(loan.amount),
-      interestRate: loan.interestRate ? Number(loan.interestRate) : null
+      interestRate: loan.interestRate ? Number(loan.interestRate) : null,
     }
 
     return NextResponse.json(formattedLoan)

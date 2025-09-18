@@ -18,6 +18,7 @@ interface Loan {
   interestRate?: number
   dueDate?: string
   isPaid?: boolean
+  installmentCount?: number | null
 }
 
 interface LoanFormProps {
@@ -38,10 +39,12 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
     type: loan?.type || 'lent',
     interestRate: loan?.interestRate || 0,
     dueDate: loan?.dueDate ? new Date(loan.dueDate).toISOString().split('T')[0] : '',
-    isPaid: loan?.isPaid || false
+    isPaid: loan?.isPaid || false,
+    installmentCount: loan?.installmentCount ?? null
   })
 
   const [submitting, setSubmitting] = useState(false)
+  const installmentOptions = Array.from({ length: 24 }, (_, index) => index + 1)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +54,8 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
       const submitData = {
         ...formData,
         interestRate: formData.interestRate && formData.interestRate > 0 ? formData.interestRate : undefined,
-        dueDate: formData.dueDate || undefined
+        dueDate: formData.dueDate || undefined,
+        installmentCount: formData.installmentCount ? formData.installmentCount : null
       }
       await onSubmit(submitData)
     } catch (error) {
@@ -176,6 +180,30 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                   <option value="EUR">EUR (€)</option>
                 </select>
               </div>
+            </div>
+
+            {/* Installments */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Número de Parcelas
+              </label>
+              <select
+                value={formData.installmentCount ? String(formData.installmentCount) : ''}
+                onChange={(e) =>
+                  setFormData(prev => ({
+                    ...prev,
+                    installmentCount: e.target.value ? Number(e.target.value) : null
+                  }))
+                }
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              >
+                <option value="">À vista</option>
+                {installmentOptions.map(option => (
+                  <option key={option} value={option}>
+                    {option}x
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Lender Info */}
