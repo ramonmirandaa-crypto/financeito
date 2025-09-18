@@ -511,10 +511,12 @@ export default function Dashboard() {
     { title: 'Empréstimos', description: 'Gerencie seus empréstimos', href: '/loans' },
   ]
 
+  const connectDisabled = !sdkReady || loading
+
   const quickActions: QuickAction[] = [
     { title: 'Nova Transação', onClick: handleOpenNewTransactionModal },
     { title: 'Nova Conta Offline', onClick: handleOpenManualAccountModal },
-    { title: 'Conectar Conta', onClick: handleConnect },
+    { title: 'Conectar Conta', onClick: handleConnect, disabled: connectDisabled },
     { title: 'Adicionar Meta', onClick: () => router.push('/goals?create=1') },
     { title: 'Novo Orçamento', onClick: () => router.push('/budget?create=1') },
   ]
@@ -686,7 +688,7 @@ export default function Dashboard() {
                 </div>
               </>
             ) : accounts.length === 0 ? (
-              <EmptyAccounts onConnect={handleConnect} />
+              <EmptyAccounts onConnect={handleConnect} disabled={connectDisabled} />
             ) : (
               <>
                 <div className="mb-4" style={{ width: '100%', height: 200 }}>
@@ -713,7 +715,7 @@ export default function Dashboard() {
                 </ul>
               </>
             )}
-            <LiquidButton onClick={handleConnect} disabled={!sdkReady || loading}>
+            <LiquidButton onClick={handleConnect} disabled={connectDisabled}>
               {loading ? 'Carregando...' : 'Conectar Conta'}
             </LiquidButton>
           </LiquidCard>
@@ -734,7 +736,7 @@ export default function Dashboard() {
                 </div>
               </>
             ) : transactions.length === 0 ? (
-              <EmptyTransactions onConnect={handleConnect} />
+              <EmptyTransactions onConnect={handleConnect} disabled={connectDisabled} />
             ) : (
               <>
                 <div style={{ width: '100%', height: 200 }}>
