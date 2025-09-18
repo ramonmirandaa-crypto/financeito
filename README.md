@@ -7,6 +7,11 @@
 - Sincronização e listagem de transações.
 - Recursos como orçamento, metas, assinaturas, recorrências e empréstimos familiares ainda não estão disponíveis.
 
+## Tema e prevenção de FOUC
+
+- O layout injeta um script inline (`ThemeScript`) logo na abertura da tag `<head>` para aplicar imediatamente o tema salvo, evitando o flash de conteúdo com cores incorretas (FOUC) antes da hidratação do React.
+- O script reutiliza a mesma chave `financeito.theme` empregada no contexto de tema, mantendo o `localStorage` sincronizado com o estado global da aplicação.
+
 ## Cookie de Sessão
 
 - Em desenvolvimento (`NODE_ENV !== 'production'`), o cookie de sessão é criado sem a flag `Secure`, permitindo o uso em `http://localhost`.

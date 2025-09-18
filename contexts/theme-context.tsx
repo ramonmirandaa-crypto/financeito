@@ -10,9 +10,7 @@ import {
   type ReactNode
 } from 'react'
 
-const THEME_STORAGE_KEY = 'financeito.theme'
-
-type Theme = 'light' | 'dark'
+import { THEME_STORAGE_KEY, isTheme, type Theme } from '@/lib/theme'
 
 interface ThemeContextValue {
   theme: Theme
@@ -35,8 +33,8 @@ const getInitialTheme = (): { theme: Theme; hasUserPreference: boolean } => {
     return { theme: 'light', hasUserPreference: false }
   }
 
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) as Theme | null
-  if (storedTheme === 'light' || storedTheme === 'dark') {
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+  if (isTheme(storedTheme)) {
     return { theme: storedTheme, hasUserPreference: true }
   }
 
@@ -99,7 +97,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         return
       }
 
-      if (event.newValue === 'light' || event.newValue === 'dark') {
+      if (isTheme(event.newValue)) {
         setHasUserPreference(true)
         setThemeState(event.newValue)
       }
