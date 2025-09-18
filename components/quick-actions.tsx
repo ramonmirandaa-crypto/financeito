@@ -7,6 +7,7 @@ export interface QuickAction {
   title: string
   href?: string
   onClick?: () => void
+  disabled?: boolean
 }
 
 interface QuickActionsProps {
@@ -29,6 +30,7 @@ export function QuickActions({ actions }: QuickActionsProps) {
             size="sm"
             variant="primary"
             onClick={action.onClick}
+            disabled={action.disabled}
           >
             {action.title}
           </LiquidButton>

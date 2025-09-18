@@ -10,16 +10,18 @@ interface EmptyStateProps {
   onAction?: () => void
   actionHref?: string
   className?: string
+  disabled?: boolean
 }
 
-export function EmptyState({ 
-  icon = "📋", 
-  title, 
-  description, 
-  actionText, 
-  onAction, 
+export function EmptyState({
+  icon = "📋",
+  title,
+  description,
+  actionText,
+  onAction,
   actionHref,
-  className = ""
+  className = "",
+  disabled = false
 }: EmptyStateProps) {
   return (
     <motion.div
@@ -36,6 +38,7 @@ export function EmptyState({
           onClick={onAction}
           variant="primary"
           className={actionHref ? "inline-block" : ""}
+          disabled={disabled}
         >
           {actionHref ? (
             <a href={actionHref}>{actionText}</a>
@@ -49,7 +52,12 @@ export function EmptyState({
 }
 
 // Estados vazios específicos para cada seção
-export function EmptyTransactions({ onConnect }: { onConnect?: () => void }) {
+interface EmptyConnectStateProps {
+  onConnect?: () => void
+  disabled?: boolean
+}
+
+export function EmptyTransactions({ onConnect, disabled }: EmptyConnectStateProps) {
   return (
     <EmptyState
       icon="💳"
@@ -57,11 +65,12 @@ export function EmptyTransactions({ onConnect }: { onConnect?: () => void }) {
       description="Conecte suas contas bancárias para ver suas transações automaticamente ou adicione transações manualmente."
       actionText="Conectar Conta"
       onAction={onConnect}
+      disabled={disabled}
     />
   )
 }
 
-export function EmptyAccounts({ onConnect }: { onConnect?: () => void }) {
+export function EmptyAccounts({ onConnect, disabled }: EmptyConnectStateProps) {
   return (
     <EmptyState
       icon="🏦"
@@ -69,6 +78,7 @@ export function EmptyAccounts({ onConnect }: { onConnect?: () => void }) {
       description="Conecte suas contas bancárias para começar a acompanhar seu saldo e transações em tempo real."
       actionText="Conectar Primeira Conta"
       onAction={onConnect}
+      disabled={disabled}
     />
   )
 }
