@@ -107,12 +107,14 @@ export function MenuItem({
     <button
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border border-white/20 shadow-lg focus-ring ${
-        isMainButton 
-          ? "w-16 h-16 bg-white/10 hover:bg-white/20 shadow-2xl border-white/30" 
-          : "w-12 h-12 bg-white/5 hover:bg-white/15 border-white/10"
+      className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border shadow-lg focus-ring ${
+        isMainButton
+          ? "w-16 h-16 bg-slate-200/70 dark:bg-white/10 hover:bg-slate-300/70 dark:hover:bg-white/20 shadow-2xl border-slate-300/70 dark:border-white/20"
+          : "w-12 h-12 bg-slate-200/70 dark:bg-white/10 hover:bg-slate-300/70 dark:hover:bg-white/20 border-slate-300/60 dark:border-white/10"
       } ${
-        isActive && !isMainButton ? "bg-white/20 border-white/40 shadow-white/20" : ""
+        isActive && !isMainButton
+          ? "bg-slate-300/80 dark:bg-white/20 border-foreground dark:border-white/50"
+          : ""
       } ${
         className || ""
       }`}
@@ -133,13 +135,13 @@ export function MenuItem({
       aria-expanded={isMainButton ? isExpanded : undefined}
       tabIndex={!isMainButton && !isExpanded ? -1 : 0}
     >
-      <div className="text-white/70 hover:text-white transition-colors duration-200">
+      <div className="text-slate-800 hover:text-slate-900 dark:text-white/80 dark:hover:text-white transition-colors duration-200">
         {icon}
       </div>
-      
+
       {/* Indicador de item ativo */}
       {isActive && !isMainButton && (
-        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-gray-900/50" />
+        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-foreground dark:bg-white border-2 border-foreground dark:border-white/60" />
       )}
     </button>
   )
@@ -149,7 +151,9 @@ export function MenuItem({
       <Link 
         href={href} 
         className={`absolute flex items-center justify-center rounded-full transition-all duration-500 ease-in-out backdrop-blur-md border w-12 h-12 focus-ring ${
-          isActive ? "bg-white/20 border-white/40 shadow-white/20" : "bg-white/5 hover:bg-white/15 border-white/10"
+          isActive
+            ? "bg-slate-300/80 dark:bg-white/20 border-foreground dark:border-white/50"
+            : "bg-slate-200/70 dark:bg-white/10 hover:bg-slate-300/70 dark:hover:bg-white/20 border-slate-300/60 dark:border-white/10"
         } shadow-lg`}
         onClick={() => setIsExpanded(false)}
         onKeyDown={handleKeyDown}
@@ -167,13 +171,13 @@ export function MenuItem({
         tabIndex={!isExpanded ? -1 : 0}
         aria-hidden={!isExpanded}
       >
-        <div className="text-white/70 hover:text-white transition-colors duration-200">
+        <div className="text-slate-800 hover:text-slate-900 dark:text-white/80 dark:hover:text-white transition-colors duration-200">
           {icon}
         </div>
-        
+
         {/* Indicador de item ativo */}
         {isActive && (
-          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-gray-900/50" />
+          <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-foreground dark:bg-white border-2 border-foreground dark:border-white/60" />
         )}
       </Link>
     )
