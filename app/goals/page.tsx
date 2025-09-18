@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
@@ -22,7 +22,7 @@ interface Goal {
   priority: string
 }
 
-export default function GoalsPage() {
+function GoalsPageContent() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -385,5 +385,22 @@ export default function GoalsPage() {
         onConfirm={() => handleDeleteGoal(deletingGoal!)}
       />
     </div>
+  )
+}
+
+export default function GoalsPage() {
+  return (
+    <Suspense
+      fallback={(
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-400"></div>
+            <p className="mt-2 text-slate-400">Carregando metas...</p>
+          </div>
+        </div>
+      )}
+    >
+      <GoalsPageContent />
+    </Suspense>
   )
 }

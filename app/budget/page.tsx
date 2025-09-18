@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
@@ -12,7 +12,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { chartColors } from '@/lib/theme'
 import { useToast } from '@/hooks/use-toast'
 
-export default function BudgetPage() {
+function BudgetPageContent() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -432,5 +432,22 @@ export default function BudgetPage() {
         onConfirm={() => handleDeleteBudget(deletingBudget!)}
       />
     </div>
+  )
+}
+
+export default function BudgetPage() {
+  return (
+    <Suspense
+      fallback={(
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+            <p className="mt-2 text-slate-400">Carregando orçamentos...</p>
+          </div>
+        </div>
+      )}
+    >
+      <BudgetPageContent />
+    </Suspense>
   )
 }
