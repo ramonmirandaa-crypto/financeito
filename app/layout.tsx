@@ -2,6 +2,7 @@ import './globals.css'
 import { Inter } from 'next/font/google'
 import FluidSidebar from '@/components/fluid-sidebar'
 import ThemeToggle from '@/components/theme-toggle'
+import ThemeScript from '@/components/theme-script'
 import Providers from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -10,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-br" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <script src="https://connect.pluggy.ai/sdk.js" async></script>
       </head>
       <body className={inter.className}>
