@@ -40,15 +40,56 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Meta não encontrada' }, { status: 404 })
     }
 
+    const updateData: Record<string, any> = {}
+
+    if (Object.prototype.hasOwnProperty.call(data, 'title')) {
+      updateData.title = data.title
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'description')) {
+      updateData.description = data.description
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'targetAmount')) {
+      if (data.targetAmount !== undefined) {
+        updateData.targetAmount = targetAmountNumber
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'currentAmount')) {
+      if (data.currentAmount !== undefined) {
+        updateData.currentAmount = currentAmountNumber
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'currency')) {
+      updateData.currency = data.currency
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'targetDate')) {
+      if (data.targetDate) {
+        updateData.targetDate = new Date(data.targetDate)
+      } else if (data.targetDate === null) {
+        updateData.targetDate = null
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'category')) {
+      updateData.category = data.category
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'priority')) {
+      updateData.priority = data.priority
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'isCompleted')) {
+      updateData.isCompleted = data.isCompleted
+    }
+
     // Update goal
     const goal = await prisma.goal.update({
       where: { id },
-      data: {
-        ...data,
-        targetAmount: targetAmountNumber,
-        currentAmount: currentAmountNumber,
-        targetDate: data.targetDate ? new Date(data.targetDate) : undefined
-      }
+      data: updateData
     })
 
     // Convert Decimal to number for JSON serialization

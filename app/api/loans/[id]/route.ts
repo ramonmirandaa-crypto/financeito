@@ -53,17 +53,70 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Empréstimo não encontrado' }, { status: 404 })
     }
 
+    const updateData: Record<string, any> = {}
+
+    if (Object.prototype.hasOwnProperty.call(data, 'title')) {
+      updateData.title = data.title
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'description')) {
+      updateData.description = data.description
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'amount')) {
+      if (data.amount !== undefined) {
+        updateData.amount = amountNumber
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'currency')) {
+      updateData.currency = data.currency
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'lenderName')) {
+      updateData.lenderName = data.lenderName
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'lenderContact')) {
+      updateData.lenderContact = data.lenderContact
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+      updateData.type = data.type
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'interestRate')) {
+      if (data.interestRate !== undefined) {
+        updateData.interestRate = interestRateNumber
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'installmentCount')) {
+      updateData.installmentCount = installmentCountValue
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'dueDate')) {
+      if (data.dueDate) {
+        updateData.dueDate = new Date(data.dueDate)
+      } else if (data.dueDate === null) {
+        updateData.dueDate = null
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'isPaid')) {
+      updateData.isPaid = data.isPaid
+
+      if (data.isPaid && !existingLoan.isPaid) {
+        updateData.paidAt = new Date()
+      } else if (data.isPaid === false && existingLoan.isPaid) {
+        updateData.paidAt = null
+      }
+    }
+
     // Update loan
     const loan = await prisma.loan.update({
       where: { id },
-      data: {
-        ...data,
-        amount: amountNumber,
-        interestRate: interestRateNumber,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-        installmentCount: installmentCountValue,
-        paidAt: data.isPaid && !existingLoan.isPaid ? new Date() : data.isPaid === false ? null : undefined
-      }
+      data: updateData
     })
 
     // Convert Decimal to number for JSON serialization
