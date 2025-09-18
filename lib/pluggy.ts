@@ -65,3 +65,49 @@ export async function listAccounts(params: { itemId?: string; page?: number; pag
   const { data } = await axios.get(`${BASE_URL}/accounts`, { params, headers })
   return data
 }
+
+export async function listCreditCards(params: { itemId?: string; page?: number; pageSize?: number }) {
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/credit_cards`, { params, headers })
+  return data
+}
+
+export async function listCreditCardTransactions(params: { creditCardId: string; page?: number; pageSize?: number }) {
+  const { creditCardId, ...rest } = params
+  if (!creditCardId) throw new Error('creditCardId is required')
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/credit_cards/${creditCardId}/transactions`, {
+    params: rest,
+    headers,
+  })
+  return data
+}
+
+export async function listInvestments(params: { itemId?: string; page?: number; pageSize?: number }) {
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/investments`, { params, headers })
+  return data
+}
+
+export async function listInvestmentTransactions(params: { itemId?: string; page?: number; pageSize?: number }) {
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/investments/transactions`, { params, headers })
+  return data
+}
+
+export async function listLoans(params: { itemId?: string; page?: number; pageSize?: number }) {
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/loans`, { params, headers })
+  return data
+}
+
+export async function listLoanTransactions(params: { loanId: string; page?: number; pageSize?: number }) {
+  const { loanId, ...rest } = params
+  if (!loanId) throw new Error('loanId is required')
+  const headers = await authHeaders()
+  const { data } = await axios.get(`${BASE_URL}/loans/${loanId}/transactions`, {
+    params: rest,
+    headers,
+  })
+  return data
+}
