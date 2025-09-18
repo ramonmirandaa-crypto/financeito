@@ -107,6 +107,7 @@ describe('ensureUser integration in goal route', () => {
       body: JSON.stringify({
         title: 'New Goal',
         targetAmount: 100,
+        currentAmount: 25,
         targetDate: '2024-12-31T00:00:00.000Z',
       }),
     })
@@ -116,11 +117,13 @@ describe('ensureUser integration in goal route', () => {
     expect(response.status).toBe(201)
     const payload = await response.json()
     expect(payload.title).toBe('New Goal')
+    expect(payload.currentAmount).toBe(25)
 
     expect(userUpsertMock).toHaveBeenCalledTimes(1)
     expect(goalCreateMock).toHaveBeenCalledTimes(1)
     expect(userStore.has('user_123')).toBe(true)
     expect(goalStore).toHaveLength(1)
     expect(goalStore[0].userId).toBe('user_123')
+    expect(goalStore[0].currentAmount).toBe(25)
   })
 })

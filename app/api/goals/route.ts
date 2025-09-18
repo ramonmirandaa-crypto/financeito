@@ -37,7 +37,16 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
-    const { title, description, targetAmount, currency, targetDate, category, priority } = data
+    const {
+      title,
+      description,
+      targetAmount,
+      currentAmount,
+      currency,
+      targetDate,
+      category,
+      priority
+    } = data
 
     // Validate required fields
     if (!title || !targetAmount || !targetDate) {
@@ -51,6 +60,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campo targetAmount inválido' }, { status: 400 })
     }
 
+    const currentAmountNumber = currentAmount !== undefined ? Number(currentAmount) : 0
+    if (Number.isNaN(currentAmountNumber)) {
+      return NextResponse.json({ error: 'Campo currentAmount inválido' }, { status: 400 })
+    }
+
     // Create goal
     const goal = await prisma.goal.create({
       data: {
@@ -58,6 +72,7 @@ export async function POST(request: NextRequest) {
         title,
         description,
         targetAmount: targetAmountNumber,
+        currentAmount: currentAmountNumber,
         currency: currency || 'BRL',
         targetDate: new Date(targetDate),
         category,
