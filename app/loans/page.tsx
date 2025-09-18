@@ -21,6 +21,7 @@ interface Loan {
   dueDate?: string
   isPaid: boolean
   paidAt?: string
+  installmentCount?: number | null
 }
 
 export default function LoansPage() {
@@ -269,7 +270,7 @@ export default function LoansPage() {
                             <span className="text-slate-300">Vencimento:</span>
                             <span className={`font-semibold ${
                               loan.isPaid ? 'text-green-400' :
-                              isOverdue ? 'text-red-400' : 
+                              isOverdue ? 'text-red-400' :
                               'text-slate-300'
                             }`}>
                               {new Date(loan.dueDate).toLocaleDateString()}
@@ -278,10 +279,25 @@ export default function LoansPage() {
                           </div>
                         )}
 
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-300">Pagamento:</span>
+                          <span
+                            className={`font-semibold ${
+                              loan.installmentCount && loan.installmentCount > 1
+                                ? 'text-yellow-300'
+                                : 'text-slate-300'
+                            }`}
+                          >
+                            {loan.installmentCount && loan.installmentCount > 0
+                              ? `${loan.installmentCount}x`
+                              : 'À vista'}
+                          </span>
+                        </div>
+
                         <div className="flex items-center justify-between">
                           <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
-                            loan.isPaid 
-                              ? 'bg-green-500/20 text-green-300' 
+                            loan.isPaid
+                              ? 'bg-green-500/20 text-green-300'
                               : 'bg-yellow-500/20 text-yellow-300'
                           }`}>
                             {loan.isPaid ? 'Quitado' : 'Pendente'}
