@@ -1,7 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import FluidSidebar from '@/components/fluid-sidebar'
-import ThemeToggle from '@/components/theme-toggle'
+import FloatingProfileMenu from '@/components/floating-profile-menu'
 import ThemeScript from '@/components/theme-script'
 import Providers from './providers'
 
@@ -16,7 +16,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <Providers>
-          <ThemeToggle className="fixed top-6 right-6 z-50" />
           <main className="min-h-screen w-full relative">
             <FluidSidebar />
             <div className="flex flex-col">
@@ -25,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </div>
           </main>
+          <FloatingProfileMenu />
         </Providers>
       </body>
     </html>
