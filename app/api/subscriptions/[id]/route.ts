@@ -32,14 +32,50 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Assinatura não encontrada' }, { status: 404 })
     }
 
+    const updateData: Record<string, any> = {}
+
+    if (Object.prototype.hasOwnProperty.call(data, 'name')) {
+      updateData.name = data.name
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'description')) {
+      updateData.description = data.description
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'amount')) {
+      if (data.amount !== undefined) {
+        updateData.amount = amountNumber
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'currency')) {
+      updateData.currency = data.currency
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'billingCycle')) {
+      updateData.billingCycle = data.billingCycle
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'nextBilling')) {
+      if (data.nextBilling) {
+        updateData.nextBilling = new Date(data.nextBilling)
+      } else if (data.nextBilling === null) {
+        updateData.nextBilling = null
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'category')) {
+      updateData.category = data.category
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'autoRenew')) {
+      updateData.autoRenew = data.autoRenew
+    }
+
     // Update subscription
     const subscription = await prisma.subscription.update({
       where: { id },
-      data: {
-        ...data,
-        amount: amountNumber,
-        nextBilling: data.nextBilling ? new Date(data.nextBilling) : undefined
-      }
+      data: updateData
     })
 
     // Convert Decimal to number for JSON serialization
