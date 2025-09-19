@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeSubscription } from '@/lib/prisma-serializers'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -78,13 +79,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: updateData
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedSubscription = {
-      ...subscription,
-      amount: Number(subscription.amount)
-    }
-
-    return NextResponse.json(formattedSubscription)
+    return NextResponse.json(serializeSubscription(subscription))
   } catch (error) {
     console.error('Erro ao atualizar assinatura:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })

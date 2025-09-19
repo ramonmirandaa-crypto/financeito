@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeGoal } from '@/lib/prisma-serializers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,14 +16,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedGoals = goals.map((goal: any) => ({
-      ...goal,
-      targetAmount: Number(goal.targetAmount),
-      currentAmount: Number(goal.currentAmount)
-    }))
-
-    return NextResponse.json(formattedGoals)
+    return NextResponse.json(goals.map(serializeGoal))
   } catch (error) {
     console.error('Erro ao buscar metas:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
@@ -80,14 +74,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedGoal = {
-      ...goal,
-      targetAmount: Number(goal.targetAmount),
-      currentAmount: Number(goal.currentAmount)
-    }
-
-    return NextResponse.json(formattedGoal, { status: 201 })
+    return NextResponse.json(serializeGoal(goal), { status: 201 })
   } catch (error) {
     console.error('Erro ao criar meta:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })

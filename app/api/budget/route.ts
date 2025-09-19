@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeBudget } from '@/lib/prisma-serializers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,18 +32,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedBudgets = budgets.map((budget: any) => ({
-      ...budget,
-      totalAmount: Number(budget.totalAmount),
-      items: budget.items.map((item: any) => ({
-        ...item,
-        amount: Number(item.amount),
-        spent: Number(item.spent)
-      }))
-    }))
-
-    return NextResponse.json(formattedBudgets)
+    return NextResponse.json(budgets.map(serializeBudget))
   } catch (error) {
     console.error('Erro ao buscar orçamentos:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
@@ -132,18 +122,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedBudget = {
-      ...budget,
-      totalAmount: Number(budget.totalAmount),
-      items: budget.items.map((item: any) => ({
-        ...item,
-        amount: Number(item.amount),
-        spent: Number(item.spent)
-      }))
-    }
-
-    return NextResponse.json(formattedBudget, { status: 201 })
+    return NextResponse.json(serializeBudget(budget), { status: 201 })
   } catch (error) {
     console.error('Erro ao criar orçamento:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })

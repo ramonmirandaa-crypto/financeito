@@ -12,6 +12,11 @@ const loanUpdateMock = vi.fn()
 const subscriptionFindFirstMock = vi.fn()
 const subscriptionUpdateMock = vi.fn()
 
+const serializeBudgetMock = vi.fn()
+const serializeGoalMock = vi.fn()
+const serializeLoanMock = vi.fn()
+const serializeSubscriptionMock = vi.fn()
+
 let goalUpdatePayload: any
 let loanUpdatePayload: any
 let subscriptionUpdatePayload: any
@@ -22,6 +27,13 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('@/lib/ensure-user', () => ({
   ensureUser: ensureUserMock
+}))
+
+vi.mock('@/lib/prisma-serializers', () => ({
+  serializeBudget: serializeBudgetMock,
+  serializeGoal: serializeGoalMock,
+  serializeLoan: serializeLoanMock,
+  serializeSubscription: serializeSubscriptionMock
 }))
 
 vi.mock('@/lib/db', () => {
@@ -55,6 +67,10 @@ beforeEach(() => {
   loanUpdateMock.mockReset()
   subscriptionFindFirstMock.mockReset()
   subscriptionUpdateMock.mockReset()
+  serializeBudgetMock.mockReset()
+  serializeGoalMock.mockReset()
+  serializeLoanMock.mockReset()
+  serializeSubscriptionMock.mockReset()
 
   goalUpdatePayload = undefined
   loanUpdatePayload = undefined
@@ -147,6 +163,53 @@ beforeEach(() => {
       updatedAt: new Date()
     }
   })
+
+  serializeBudgetMock.mockImplementation((budget: any) => budget)
+
+  serializeGoalMock.mockImplementation((goal: any) => ({
+    ...goal,
+    targetAmount: Number(goal.targetAmount),
+    currentAmount: Number(goal.currentAmount),
+    targetDate: goal.targetDate instanceof Date ? goal.targetDate.toISOString() : goal.targetDate,
+    createdAt: goal.createdAt instanceof Date ? goal.createdAt.toISOString() : goal.createdAt,
+    updatedAt: goal.updatedAt instanceof Date ? goal.updatedAt.toISOString() : goal.updatedAt,
+    serialization: 'goal'
+  }))
+
+  serializeLoanMock.mockImplementation((loan: any) => ({
+    ...loan,
+    amount: typeof loan.amount === 'number' ? loan.amount : Number(loan.amount),
+    interestRate:
+      loan.interestRate === null || loan.interestRate === undefined
+        ? loan.interestRate
+        : typeof loan.interestRate === 'number'
+          ? loan.interestRate
+          : Number(loan.interestRate),
+    dueDate: loan.dueDate instanceof Date ? loan.dueDate.toISOString() : loan.dueDate,
+    paidAt: loan.paidAt instanceof Date ? loan.paidAt.toISOString() : loan.paidAt,
+    createdAt: loan.createdAt instanceof Date ? loan.createdAt.toISOString() : loan.createdAt,
+    updatedAt: loan.updatedAt instanceof Date ? loan.updatedAt.toISOString() : loan.updatedAt,
+    serialization: 'loan'
+  }))
+
+  serializeSubscriptionMock.mockImplementation((subscription: any) => ({
+    ...subscription,
+    amount:
+      typeof subscription.amount === 'number' ? subscription.amount : Number(subscription.amount),
+    nextBilling:
+      subscription.nextBilling instanceof Date
+        ? subscription.nextBilling.toISOString()
+        : subscription.nextBilling,
+    createdAt:
+      subscription.createdAt instanceof Date
+        ? subscription.createdAt.toISOString()
+        : subscription.createdAt,
+    updatedAt:
+      subscription.updatedAt instanceof Date
+        ? subscription.updatedAt.toISOString()
+        : subscription.updatedAt,
+    serialization: 'subscription'
+  }))
 })
 
 describe('Goal update sanitization', () => {
@@ -190,9 +253,23 @@ describe('Goal update sanitization', () => {
     expect(goalUpdatePayload).not.toHaveProperty('userId')
     expect(goalUpdatePayload).not.toHaveProperty('createdAt')
 
+    expect(serializeGoalMock).toHaveBeenCalledTimes(1)
+    expect(serializeGoalMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'goal_1',
+        targetAmount: 750.5,
+        currentAmount: 320.75,
+        targetDate: expect.any(Date)
+      })
+    )
+
     const body = await response.json()
     expect(body.targetAmount).toBe(750.5)
     expect(body.currentAmount).toBe(320.75)
+    expect(body.serialization).toBe('goal')
+    expect(body.targetDate).toBe('2026-06-01T00:00:00.000Z')
+    expect(typeof body.createdAt).toBe('string')
+    expect(typeof body.updatedAt).toBe('string')
   })
 })
 
@@ -242,9 +319,22 @@ describe('Loan update sanitization', () => {
     expect(loanUpdatePayload).not.toHaveProperty('userId')
     expect(loanUpdatePayload).not.toHaveProperty('paidAt', '2000-01-01T00:00:00.000Z')
 
+    expect(serializeLoanMock).toHaveBeenCalledTimes(1)
+    expect(serializeLoanMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'loan_1',
+        amount: 1500.25,
+        interestRate: 3.75,
+        paidAt: expect.any(Date)
+      })
+    )
+
     const body = await response.json()
     expect(body.amount).toBe(1500.25)
     expect(body.interestRate).toBe(3.75)
+    expect(body.serialization).toBe('loan')
+    expect(typeof body.dueDate).toBe('string')
+    expect(typeof body.paidAt).toBe('string')
   })
 })
 
@@ -287,7 +377,20 @@ describe('Subscription update sanitization', () => {
     expect(subscriptionUpdatePayload).not.toHaveProperty('userId')
     expect(subscriptionUpdatePayload).not.toHaveProperty('createdAt')
 
+    expect(serializeSubscriptionMock).toHaveBeenCalledTimes(1)
+    expect(serializeSubscriptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'subscription_1',
+        amount: 29.99,
+        nextBilling: expect.any(Date)
+      })
+    )
+
     const body = await response.json()
     expect(body.amount).toBe(29.99)
+    expect(body.serialization).toBe('subscription')
+    expect(body.nextBilling).toBe('2026-07-15T00:00:00.000Z')
+    expect(typeof body.createdAt).toBe('string')
+    expect(typeof body.updatedAt).toBe('string')
   })
 })
