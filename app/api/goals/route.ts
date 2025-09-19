@@ -59,6 +59,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campo currentAmount inválido' }, { status: 400 })
     }
 
+    const parsedTargetDate = new Date(targetDate)
+    if (Number.isNaN(parsedTargetDate.getTime())) {
+      return NextResponse.json({ error: 'Campo targetDate inválido' }, { status: 400 })
+    }
+
     // Create goal
     const goal = await prisma.goal.create({
       data: {
@@ -68,7 +73,7 @@ export async function POST(request: NextRequest) {
         targetAmount: targetAmountNumber,
         currentAmount: currentAmountNumber,
         currency: currency || 'BRL',
-        targetDate: new Date(targetDate),
+        targetDate: parsedTargetDate,
         category,
         priority: priority || 'medium'
       }

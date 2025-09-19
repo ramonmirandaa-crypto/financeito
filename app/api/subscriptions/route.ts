@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campo amount inválido' }, { status: 400 })
     }
 
+    const parsedNextBilling = new Date(nextBilling)
+    if (Number.isNaN(parsedNextBilling.getTime())) {
+      return NextResponse.json({ error: 'Campo nextBilling inválido' }, { status: 400 })
+    }
+
     // Create subscription
     const subscription = await prisma.subscription.create({
       data: {
@@ -54,7 +59,7 @@ export async function POST(request: NextRequest) {
         amount: amountNumber,
         currency: currency || 'BRL',
         billingCycle,
-        nextBilling: new Date(nextBilling),
+        nextBilling: parsedNextBilling,
         category,
         autoRenew: autoRenew ?? true
       }
