@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeBudget } from '@/lib/prisma-serializers'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -133,18 +134,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       })
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedBudget = {
-      ...budget,
-      totalAmount: Number(budget!.totalAmount),
-      items: budget!.items.map((item: any) => ({
-        ...item,
-        amount: Number(item.amount),
-        spent: Number(item.spent)
-      }))
+    if (!budget) {
+      return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json(formattedBudget)
+    return NextResponse.json(serializeBudget(budget))
   } catch (error) {
     console.error('Erro ao atualizar orçamento:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })

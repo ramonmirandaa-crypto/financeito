@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeLoan } from '@/lib/prisma-serializers'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -119,14 +120,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: updateData
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedLoan = {
-      ...loan,
-      amount: Number(loan.amount),
-      interestRate: loan.interestRate ? Number(loan.interestRate) : null,
-    }
-
-    return NextResponse.json(formattedLoan)
+    return NextResponse.json(serializeLoan(loan))
   } catch (error) {
     console.error('Erro ao atualizar empréstimo:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })

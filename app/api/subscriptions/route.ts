@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeSubscription } from '@/lib/prisma-serializers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,13 +16,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedSubscriptions = subscriptions.map((subscription: any) => ({
-      ...subscription,
-      amount: Number(subscription.amount)
-    }))
-
-    return NextResponse.json(formattedSubscriptions)
+    return NextResponse.json(subscriptions.map(serializeSubscription))
   } catch (error) {
     console.error('Erro ao buscar assinaturas:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
@@ -65,13 +60,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedSubscription = {
-      ...subscription,
-      amount: Number(subscription.amount)
-    }
-
-    return NextResponse.json(formattedSubscription, { status: 201 })
+    return NextResponse.json(serializeSubscription(subscription), { status: 201 })
   } catch (error) {
     console.error('Erro ao criar assinatura:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })

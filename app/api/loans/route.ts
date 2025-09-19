@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { serializeLoan } from '@/lib/prisma-serializers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,14 +16,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedLoans = loans.map((loan: any) => ({
-      ...loan,
-      amount: Number(loan.amount),
-      interestRate: loan.interestRate ? Number(loan.interestRate) : null
-    }))
-
-    return NextResponse.json(formattedLoans)
+    return NextResponse.json(loans.map(serializeLoan))
   } catch (error) {
     console.error('Erro ao buscar empréstimos:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
@@ -101,14 +95,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Convert Decimal to number for JSON serialization
-    const formattedLoan = {
-      ...loan,
-      amount: Number(loan.amount),
-      interestRate: loan.interestRate ? Number(loan.interestRate) : null,
-    }
-
-    return NextResponse.json(formattedLoan, { status: 201 })
+    return NextResponse.json(serializeLoan(loan), { status: 201 })
   } catch (error) {
     console.error('Erro ao criar empréstimo:', error)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
