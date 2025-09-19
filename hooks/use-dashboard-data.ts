@@ -16,7 +16,8 @@ import type {
 } from '@/components/forms/transaction-form'
 import type { ManualAccountFormData } from '@/components/forms/manual-account-form'
 import type { QuickAction } from '@/components/quick-actions'
-import type { QuickAccessItem } from '@/components/quick-access'
+import { navigationItems } from '@/config/navigation'
+import type { QuickAccessItem } from '@/config/navigation'
 import type { TransactionCalendarDay } from '@/components/transactions/transaction-calendar'
 import {
   formatDateToISODate,
@@ -463,36 +464,13 @@ export const useDashboardData = () => {
   )
 
   const quickAccessItems = useMemo<QuickAccessItem[]>(
-    () => [
-      {
-        title: 'Contas',
-        description: 'Resumo das suas contas conectadas',
-        href: '/dashboard#accounts',
-      },
-      {
-        title: 'Transações',
-        description: 'Histórico de movimentações',
-        href: '/dashboard#transactions',
-      },
-      {
-        title: 'Evolução de Saldos',
-        description: 'Gráficos dos saldos ao longo do tempo',
-        href: '/dashboard#balance-evolution',
-      },
-      { title: 'Orçamentos', description: 'Planeje seus gastos', href: '/budget' },
-      { title: 'Metas', description: 'Acompanhe seus objetivos', href: '/goals' },
-      {
-        title: 'Assinaturas',
-        description: 'Controle suas assinaturas',
-        href: '/subscriptions',
-      },
-      {
-        title: 'Integrações',
-        description: 'Gerencie conexões com bancos e serviços',
-        href: '/integrations',
-      },
-      { title: 'Empréstimos', description: 'Gerencie seus empréstimos', href: '/loans' },
-    ],
+    () =>
+      navigationItems.flatMap((item) => item.quickAccessItems ?? [])
+        .filter((shortcut, index, array) => {
+          const firstIndex = array.findIndex((candidate) => candidate.href === shortcut.href)
+
+          return firstIndex === index
+        }),
     [],
   )
 

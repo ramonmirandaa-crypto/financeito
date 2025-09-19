@@ -2,12 +2,7 @@
 
 import Link from 'next/link'
 import { LiquidCard } from '@/components/ui/liquid-card'
-
-export interface QuickAccessItem {
-  title: string
-  description: string
-  href: string
-}
+import type { QuickAccessItem } from '@/config/navigation'
 
 interface QuickAccessProps {
   items: QuickAccessItem[]
@@ -29,3 +24,5 @@ export function QuickAccess({ items }: QuickAccessProps) {
 }
 
 export default QuickAccess
+
+export type { QuickAccessItem }

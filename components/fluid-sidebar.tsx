@@ -2,31 +2,12 @@
 
 import { MenuItem, MenuContainer } from "@/components/ui/fluid-menu"
 import { useTheme } from "@/contexts/theme-context"
-import {
-  Menu as MenuIcon,
-  X,
-  Home,
-  PiggyBank,
-  Target,
-  CreditCard,
-  TrendingUp,
-  Plug,
-  Moon,
-  Sun,
-} from "lucide-react"
+import { navigationItems } from "@/config/navigation"
+import { Menu as MenuIcon, X, Moon, Sun } from "lucide-react"
 
 export default function FluidSidebar() {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
-
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: <Home size={20} strokeWidth={1.5} /> },
-    { href: '/budget', label: 'Orçamento', icon: <PiggyBank size={20} strokeWidth={1.5} /> },
-    { href: '/goals', label: 'Metas', icon: <Target size={20} strokeWidth={1.5} /> },
-    { href: '/subscriptions', label: 'Assinaturas', icon: <CreditCard size={20} strokeWidth={1.5} /> },
-    { href: '/integrations', label: 'Integrações', icon: <Plug size={20} strokeWidth={1.5} /> },
-    { href: '/loans', label: 'Empréstimos', icon: <TrendingUp size={20} strokeWidth={1.5} /> },
-  ]
 
   return (
     <div className="fixed top-8 left-8 z-50">
@@ -52,18 +33,24 @@ export default function FluidSidebar() {
           />
           
           {/* Itens de navegação */}
-          {navItems.map((item, index) => (
-            <MenuItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              index={index + 1}
-              label={item.label}
-            />
-          ))}
+          {navigationItems.map((item, index) => {
+            const Icon = item.icon
+
+            return (
+              <MenuItem
+                key={item.href}
+                href={item.href}
+                icon={
+                  Icon ? <Icon size={20} strokeWidth={1.5} /> : undefined
+                }
+                index={index + 1}
+                label={item.label}
+              />
+            )
+          })}
           <MenuItem
             onClick={toggleTheme}
-            index={navItems.length + 1}
+            index={navigationItems.length + 1}
             label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
             icon={
               <div className="relative flex h-6 w-6 items-center justify-center">
