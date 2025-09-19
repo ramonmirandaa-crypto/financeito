@@ -2,17 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { navigationItems } from '@/config/navigation'
 
 export default function Sidebar() {
   const pathname = usePathname()
-
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/budget', label: 'Orçamento' },
-    { href: '/goals', label: 'Metas' },
-    { href: '/subscriptions', label: 'Assinaturas' },
-    { href: '/loans', label: 'Empréstimos' },
-  ]
+  const navItems = navigationItems.filter((item) => item.showInSidebar !== false)
 
   return (
     <aside className="sticky top-0 h-screen w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4">
