@@ -1,562 +1,49 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import { useToast } from '@/hooks/use-toast'
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  LineChart,
-  Line,
-} from 'recharts'
-import { LiquidCard } from '@/components/ui/liquid-card'
-import { LiquidButton } from '@/components/ui/liquid-button'
-import {
-  TransactionForm,
-  TransactionFormData,
-  ManualAccountOption,
-} from '@/components/forms/transaction-form'
+
 import { motion } from 'framer-motion'
-import { chartColors } from '@/lib/theme'
-import { QuickAccess, QuickAccessItem } from '@/components/quick-access'
-import { QuickActions, QuickAction } from '@/components/quick-actions'
-import {
-  formatCurrency,
-  formatDate,
-  formatCurrencyWithSign,
-  formatDateShort,
-  formatDateToISODate,
-  isUpcoming,
-  isOverdue
-} from '@/lib/format-utils'
-import { KPISkeleton, CardSkeleton, TransactionSkeleton, ChartSkeleton } from '@/components/ui/skeleton'
-import {
-  EmptyAccounts,
-  EmptyTransactions,
-  EmptyUpcomingPayments
-} from '@/components/ui/empty-state'
-import { createHandleConnect } from '@/lib/pluggy-connect'
-import {
-  TransactionCalendar,
-  type TransactionCalendarDay,
-} from '@/components/transactions/transaction-calendar'
-import {
-  ManualAccountForm,
-  ManualAccountFormData,
-} from '@/components/forms/manual-account-form'
-
-interface Transaction {
-  id: string
-  description: string
-  category?: string | null
-  amount: number
-  date: string
-  currency?: string
-  accountId?: string
-  raw?: any
-  isRecurring?: boolean
-  createdAt?: string
-  providerCategoryName?: string
-}
-
-const parseDateValue = (value: unknown): string => {
-  if (!value) {
-    return new Date().toISOString()
-  }
-
-  if (typeof value === 'string') {
-    return value
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString()
-  }
-
-  const parsed = new Date(value as string)
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toISOString()
-  }
-
-  return new Date().toISOString()
-}
-
-const normalizeTransaction = (transaction: any): Transaction => ({
-  ...transaction,
-  id: transaction.id,
-  description: transaction.description ?? '',
-  category: transaction.category ?? '',
-  amount: Number(transaction.amount ?? 0),
-  date: parseDateValue(transaction.date),
-})
-
-const toTransactionFormData = (transaction: Transaction): TransactionFormData => ({
-  id: transaction.id,
-  description: transaction.description ?? '',
-  category: transaction.category ?? '',
-  amount: transaction.amount,
-  date: formatDateToISODate(transaction.date),
-  accountId: transaction.accountId ?? null,
-})
+import { useDashboardData } from '@/hooks/use-dashboard-data'
+import { KpiGrid } from '@/components/dashboard/kpi-grid'
+import { UpcomingPaymentsCard } from '@/components/dashboard/upcoming-payments-card'
+import { DashboardQuickActions } from '@/components/dashboard/dashboard-quick-actions'
+import { DashboardQuickAccess } from '@/components/dashboard/dashboard-quick-access'
+import { AccountsCard } from '@/components/dashboard/accounts-card'
+import { TransactionsCard } from '@/components/dashboard/transactions-card'
+import { BalanceEvolutionCard } from '@/components/dashboard/balance-evolution-card'
+import { ExpensesByCategoryCard } from '@/components/dashboard/expenses-by-category-card'
+import { FinancialCalendarCard } from '@/components/dashboard/financial-calendar-card'
+import { TransactionForm } from '@/components/forms/transaction-form'
+import { ManualAccountForm } from '@/components/forms/manual-account-form'
 
 export default function Dashboard() {
-  const [accounts, setAccounts] = useState<any[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [budgets, setBudgets] = useState<any[]>([])
-  const [goals, setGoals] = useState<any[]>([])
-  const [subscriptions, setSubscriptions] = useState<any[]>([])
-  const [loans, setLoans] = useState<any[]>([])
-  const [sdkReady, setSdkReady] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false)
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
-  const [transactionFormData, setTransactionFormData] = useState<TransactionFormData | null>(null)
-  const [loadingTransactionForm, setLoadingTransactionForm] = useState(false)
-  const [savingTransaction, setSavingTransaction] = useState(false)
-  const [manualAccountModalOpen, setManualAccountModalOpen] = useState(false)
-  const [savingManualAccount, setSavingManualAccount] = useState(false)
-  const { isLoaded, isSignedIn } = useUser()
-  const router = useRouter()
-  const { toast } = useToast()
-
-  async function loadData({ silent = false }: { silent?: boolean } = {}) {
-    if (!silent) {
-      setLoading(true)
-    }
-    try {
-      // Load Pluggy data
-      const r = await fetch('/api/pluggy/sync')
-      if (r.status === 401) {
-        window.location.href = '/login'
-        return
-      }
-      if (r.ok) {
-        const json = await r.json()
-        setAccounts((json.accounts || []).map((a: any) => ({ ...a, balance: Number(a.balance) })))
-        setTransactions((json.transactions || []).map((t: any) => normalizeTransaction(t)))
-      }
-
-      // Load all finance data in parallel
-      const [budgetRes, goalsRes, subscriptionsRes, loansRes] = await Promise.all([
-        fetch('/api/budget'),
-        fetch('/api/goals'),
-        fetch('/api/subscriptions'),
-        fetch('/api/loans')
-      ])
-
-      if (budgetRes.ok) {
-        const budgetData = await budgetRes.json()
-        setBudgets(budgetData)
-      }
-      if (goalsRes.ok) {
-        const goalsData = await goalsRes.json()
-        setGoals(goalsData)
-      }
-      if (subscriptionsRes.ok) {
-        const subscriptionsData = await subscriptionsRes.json()
-        setSubscriptions(subscriptionsData)
-      }
-      if (loansRes.ok) {
-        const loansData = await loansRes.json()
-        setLoans(loansData)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error)
-      toast.error(
-        'Erro ao carregar dados',
-        'Não foi possível carregar suas informações financeiras. Tente novamente.',
-        { duration: 5000 }
-      )
-    } finally {
-      if (!silent) {
-        setLoading(false)
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (!isLoaded) return
-    if (!isSignedIn) {
-      router.push('/login')
-      return
-    }
-    loadData()
-  }, [isLoaded, isSignedIn, router])
-
-  useEffect(() => {
-    if ((window as any).PluggyConnect) {
-      setSdkReady(true)
-      return
-    }
-    const script = document.querySelector<HTMLScriptElement>(
-      'script[src="https://connect.pluggy.ai/sdk.js"]'
-    )
-    const handler = () => setSdkReady(true)
-    script?.addEventListener('load', handler)
-    return () => script?.removeEventListener('load', handler)
-  }, [])
-
-  const handleConnect = createHandleConnect({ toast, onAfterSync: loadData })
-
-  const closeTransactionModal = () => {
-    setIsTransactionModalOpen(false)
-    setSelectedTransactionId(null)
-    setTransactionFormData(null)
-    setLoadingTransactionForm(false)
-    setSavingTransaction(false)
-  }
-
-  const handleOpenNewTransactionModal = () => {
-    setSelectedTransactionId(null)
-    setTransactionFormData(null)
-    setIsTransactionModalOpen(true)
-    setLoadingTransactionForm(false)
-    setSavingTransaction(false)
-  }
-
-  const handleOpenTransactionModal = async (transactionId: string) => {
-    const existingTransaction = transactions.find((transaction) => transaction.id === transactionId)
-    setSelectedTransactionId(transactionId)
-
-    if (existingTransaction) {
-      setTransactionFormData(toTransactionFormData(existingTransaction))
-    } else {
-      setTransactionFormData(null)
-    }
-
-    setIsTransactionModalOpen(true)
-    setLoadingTransactionForm(!existingTransaction)
-
-    try {
-      const response = await fetch(`/api/transactions/${transactionId}`)
-      if (!response.ok) {
-        throw new Error('Failed to load transaction')
-      }
-
-      const data = await response.json()
-      const normalized = normalizeTransaction(data)
-      setTransactionFormData(toTransactionFormData(normalized))
-    } catch (error) {
-      console.error('Erro ao carregar transação:', error)
-      toast.error(
-        'Erro ao carregar transação',
-        'Não foi possível carregar os dados da transação selecionada.'
-      )
-      if (!existingTransaction) {
-        closeTransactionModal()
-      }
-    } finally {
-      setLoadingTransactionForm(false)
-    }
-  }
-
-  const handleSubmitTransaction = async (values: TransactionFormData) => {
-    const isEditing = Boolean(selectedTransactionId)
-    const previousTransaction = isEditing
-      ? transactions.find((transaction) => transaction.id === selectedTransactionId)
-      : null
-    setSavingTransaction(true)
-
-    try {
-      const trimmedCategory =
-        typeof values.category === 'string' ? values.category.trim() : ''
-
-      const response = await fetch(
-        isEditing ? `/api/transactions/${selectedTransactionId}` : '/api/transactions',
-        {
-          method: isEditing ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            description: values.description.trim(),
-            category: trimmedCategory || null,
-            amount: values.amount,
-            date: values.date,
-            accountId: values.accountId || null,
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to save transaction')
-      }
-
-      const data = await response.json()
-      const normalized = normalizeTransaction(data)
-
-      setTransactions((prev) => {
-        if (isEditing) {
-          return prev.map((transaction) =>
-            transaction.id === normalized.id ? { ...transaction, ...normalized } : transaction
-          )
-        }
-
-        return [normalized, ...prev].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-      })
-
-      setAccounts((prev) => {
-        const previousManualAccountId =
-          previousTransaction && previousTransaction.accountId
-            ? prev.find(
-                (account) =>
-                  account.id === previousTransaction.accountId &&
-                  account.provider === 'manual'
-              )
-              ? previousTransaction.accountId
-              : null
-            : null
-        const previousAmount = Number(previousTransaction?.amount ?? 0)
-
-        return prev.map((account) => {
-          if (account.provider !== 'manual') {
-            return account
-          }
-
-          const currentBalance = Number(account.balance ?? 0)
-
-          if (account.id === normalized.accountId) {
-            const adjustment =
-              isEditing && previousManualAccountId === normalized.accountId
-                ? normalized.amount - previousAmount
-                : normalized.amount
-            return { ...account, balance: currentBalance + adjustment }
-          }
-
-          if (
-            isEditing &&
-            previousManualAccountId &&
-            account.id === previousManualAccountId &&
-            previousManualAccountId !== normalized.accountId
-          ) {
-            return { ...account, balance: currentBalance - previousAmount }
-          }
-
-          return account
-        })
-      })
-
-      toast.success(
-        isEditing ? 'Transação atualizada' : 'Transação criada',
-        isEditing
-          ? 'As alterações foram salvas com sucesso.'
-          : 'A transação foi adicionada com sucesso.'
-      )
-
-      closeTransactionModal()
-      await loadData({ silent: true })
-    } catch (error) {
-      console.error('Erro ao salvar transação:', error)
-      toast.error(
-        isEditing ? 'Erro ao atualizar transação' : 'Erro ao criar transação',
-        isEditing
-          ? 'Não foi possível salvar as alterações. Tente novamente.'
-          : 'Não foi possível registrar a transação. Tente novamente.'
-      )
-    } finally {
-      setSavingTransaction(false)
-    }
-  }
-
-  const manualAccountOptions: ManualAccountOption[] = accounts
-    .filter((account) => account.provider === 'manual')
-    .map((account) => ({
-      id: account.id,
-      name: account.name,
-      currency: account.currency,
-      balance: Number(account.balance ?? 0),
-    }))
-
-  const handleOpenManualAccountModal = () => {
-    setManualAccountModalOpen(true)
-  }
-
-  const closeManualAccountModal = () => {
-    setManualAccountModalOpen(false)
-    setSavingManualAccount(false)
-  }
-
-  const handleSubmitManualAccount = async (values: ManualAccountFormData) => {
-    setSavingManualAccount(true)
-    try {
-      const response = await fetch('/api/manual-accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: values.name,
-          type: values.type,
-          currency: values.currency,
-          balance: values.balance,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create manual account')
-      }
-
-      const data = await response.json()
-
-      setAccounts((prev) => [
-        {
-          id: data.id,
-          name: data.name,
-          provider: 'manual',
-          providerItem: data.type ?? null,
-          currency: data.currency,
-          balance: Number(data.balance ?? 0),
-          mask: null,
-          data: data.type ? { type: data.type } : null,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        },
-        ...prev,
-      ])
-
-      toast.success(
-        'Conta offline criada',
-        'Sua conta manual foi adicionada com sucesso.'
-      )
-
-      closeManualAccountModal()
-      await loadData({ silent: true })
-    } catch (error) {
-      console.error('Erro ao criar conta manual:', error)
-      toast.error(
-        'Erro ao criar conta manual',
-        'Não foi possível adicionar a conta offline. Tente novamente.'
-      )
-    } finally {
-      setSavingManualAccount(false)
-    }
-  }
-
-  const balanceData = transactions
-    .slice()
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .reduce<{ date: string; balance: number }[]>((acc, t) => {
-      const prev = acc.length ? acc[acc.length - 1].balance : 0
-      acc.push({ date: t.date, balance: prev + t.amount })
-      return acc
-    }, [])
-
-  // Resumo por categoria apenas para despesas (valores negativos)
-  const categoryMap: Record<string, number> = {}
-  transactions
-    .filter(t => t.amount < 0) // Apenas despesas
-    .forEach((t) => {
-      const cat = t.category || t.providerCategoryName || 'Outros'
-      categoryMap[cat] = (categoryMap[cat] || 0) + Math.abs(t.amount) // Usar valor absoluto
-    })
-  const categoryData = Object.entries(categoryMap).map(([name, value]) => ({
-    name,
-    value,
-  }))
-
-  const calendarData = Object.values(
-    transactions.reduce<Record<string, TransactionCalendarDay>>((acc, t) => {
-      // Mantém o agrupamento diário estável mesmo para lançamentos perto da meia-noite em São Paulo.
-      // Isso facilita o teste manual criando transações nesses horários extremos e conferindo o calendário.
-      const normalizedDate = formatDateToISODate(t.date)
-
-      const current = acc[normalizedDate] ?? {
-        date: normalizedDate,
-        income: 0,
-        expense: 0,
-      }
-
-      acc[normalizedDate] = {
-        ...current,
-        income: current.income + (t.amount >= 0 ? t.amount : 0),
-        expense: current.expense + (t.amount < 0 ? Math.abs(t.amount) : 0),
-      }
-
-      return acc
-    }, {})
-  ).sort((a, b) => a.date.localeCompare(b.date))
-
-  const quickAccessItems: QuickAccessItem[] = [
-    {
-      title: 'Contas',
-      description: 'Resumo das suas contas conectadas',
-      href: '/dashboard#accounts',
-    },
-    {
-      title: 'Transações',
-      description: 'Histórico de movimentações',
-      href: '/dashboard#transactions',
-    },
-    {
-      title: 'Evolução de Saldos',
-      description: 'Gráficos dos saldos ao longo do tempo',
-      href: '/dashboard#balance-evolution',
-    },
-    { title: 'Orçamentos', description: 'Planeje seus gastos', href: '/budget' },
-    { title: 'Metas', description: 'Acompanhe seus objetivos', href: '/goals' },
-    {
-      title: 'Assinaturas',
-      description: 'Controle suas assinaturas',
-      href: '/subscriptions',
-    },
-    {
-      title: 'Integrações',
-      description: 'Gerencie conexões com bancos e serviços',
-      href: '/integrations',
-    },
-    { title: 'Empréstimos', description: 'Gerencie seus empréstimos', href: '/loans' },
-  ]
-
-  const connectDisabled = !sdkReady || loading
-
-  const quickActions: QuickAction[] = [
-    { title: 'Nova Transação', onClick: handleOpenNewTransactionModal },
-    { title: 'Nova Conta Offline', onClick: handleOpenManualAccountModal },
-    { title: 'Conectar Conta', onClick: handleConnect, disabled: connectDisabled },
-    { title: 'Adicionar Meta', onClick: () => router.push('/goals?create=1') },
-    { title: 'Novo Orçamento', onClick: () => router.push('/budget?create=1') },
-  ]
-
-  // Calcular KPIs principais
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
-  
-  // Obter início e fim do mês atual em timezone brasileiro
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth()
-  const startOfMonth = new Date(currentYear, currentMonth, 1)
-  const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)
-  
-  const monthlyIncome = transactions
-    .filter(t => {
-      const transactionDate = new Date(t.date)
-      return t.amount > 0 && transactionDate >= startOfMonth && transactionDate <= endOfMonth
-    })
-    .reduce((sum, t) => sum + t.amount, 0)
-  
-  const monthlyExpenses = transactions
-    .filter(t => {
-      const transactionDate = new Date(t.date)
-      return t.amount < 0 && transactionDate >= startOfMonth && transactionDate <= endOfMonth
-    })
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
-  
-  const monthlyResult = monthlyIncome - monthlyExpenses
-
-  // Próximos vencimentos de todas as fontes
-  const upcomingPayments = [
-    ...subscriptions
-      .filter(s => s.nextBillingDate && isUpcoming(s.nextBillingDate, 7))
-      .map(s => ({ type: 'Assinatura', name: s.name, date: s.nextBillingDate, amount: s.price })),
-    ...loans
-      .filter(l => l.dueDate && isUpcoming(l.dueDate, 7) && !l.isPaid)
-      .map(l => ({ type: 'Empréstimo', name: l.description, date: l.dueDate, amount: l.amount }))
-  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  const hasUpcomingPayments = upcomingPayments.length > 0
+  const {
+    accounts,
+    transactions,
+    loading,
+    quickActions,
+    quickAccessItems,
+    connectDisabled,
+    balanceData,
+    categoryData,
+    calendarData,
+    totalBalance,
+    monthlyIncome,
+    monthlyExpenses,
+    monthlyResult,
+    upcomingPayments,
+    isTransactionModalOpen,
+    transactionFormData,
+    loadingTransactionForm,
+    savingTransaction,
+    manualAccountOptions,
+    manualAccountModalOpen,
+    savingManualAccount,
+    handleOpenTransactionModal,
+    closeTransactionModal,
+    handleSubmitTransaction,
+    closeManualAccountModal,
+    handleSubmitManualAccount,
+    handleConnect,
+  } = useDashboardData()
 
   return (
     <motion.div
@@ -564,161 +51,33 @@ export default function Dashboard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      {/* KPIs Principais */}
-      {loading ? (
-        <KPISkeleton />
-      ) : (
-        <motion.div 
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <LiquidCard className="text-center">
-            <div className="text-2xl font-bold text-blue-400">
-              {formatCurrency(totalBalance)}
-            </div>
-            <div className="text-sm text-slate-400">Saldo Total</div>
-          </LiquidCard>
-          
-          <LiquidCard className="text-center">
-            <div className="text-2xl font-bold text-green-400">
-              {formatCurrency(monthlyIncome)}
-            </div>
-            <div className="text-sm text-slate-400">Receitas</div>
-          </LiquidCard>
-          
-          <LiquidCard className="text-center">
-            <div className="text-2xl font-bold text-red-400">
-              {formatCurrency(monthlyExpenses)}
-            </div>
-            <div className="text-sm text-slate-400">Despesas</div>
-          </LiquidCard>
-          
-          <LiquidCard className="text-center">
-            <div className={`text-2xl font-bold ${
-              monthlyResult >= 0 ? 'text-green-400' : 'text-red-400'
-            }`}>
-              {formatCurrencyWithSign(monthlyResult, true).value}
-            </div>
-            <div className="text-sm text-slate-400">Resultado</div>
-          </LiquidCard>
-        </motion.div>
-      )}
+      <KpiGrid
+        loading={loading}
+        totalBalance={totalBalance}
+        monthlyIncome={monthlyIncome}
+        monthlyExpenses={monthlyExpenses}
+        monthlyResult={monthlyResult}
+      />
 
-      {/* Próximos Vencimentos */}
       <section id="upcoming-payments">
-        {loading ? (
-          <CardSkeleton />
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <LiquidCard>
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <span
-                  className={`${
-                    hasUpcomingPayments ? 'text-yellow-400' : 'text-green-400'
-                  } mr-2`}
-                >
-                  {hasUpcomingPayments ? '⚠️' : '✅'}
-                </span>
-                Próximos Vencimentos
-              </h2>
-              {hasUpcomingPayments ? (
-                <div className="space-y-2">
-                  {upcomingPayments.slice(0, 5).map((payment, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center p-2 bg-card-glass/30 rounded-lg"
-                    >
-                      <div>
-                        <span className="font-medium">{payment.name}</span>
-                        <span className="text-slate-400 text-sm ml-2">({payment.type})</span>
-                      </div>
-                      <div className="text-right">
-                        <div
-                          className={`font-semibold ${
-                            isOverdue(payment.date)
-                              ? 'text-red-400'
-                              : isUpcoming(payment.date, 1)
-                                ? 'text-yellow-400'
-                                : 'text-blue-400'
-                          }`}
-                        >
-                          {formatDate(payment.date)}
-                        </div>
-                        <div className="text-sm text-slate-300">
-                          {formatCurrency(payment.amount)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyUpcomingPayments />
-              )}
-            </LiquidCard>
-          </motion.div>
-        )}
+        <UpcomingPaymentsCard loading={loading} payments={upcomingPayments} />
       </section>
 
-      <QuickActions actions={quickActions} />
-      <QuickAccess items={quickAccessItems} />
+      <DashboardQuickActions actions={quickActions} />
+      <DashboardQuickAccess items={quickAccessItems} />
+
       <div className="grid md:grid-cols-2 gap-6">
         <motion.section
           id="accounts"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <LiquidCard>
-            <h2 className="text-xl font-semibold mb-2">Contas</h2>
-            {loading ? (
-              <>
-                <ChartSkeleton height="200px" />
-                <div className="mt-4 space-y-2">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex justify-between">
-                      <div className="bg-card-glass/30 h-4 w-24 rounded animate-pulse"></div>
-                      <div className="bg-card-glass/30 h-4 w-16 rounded animate-pulse"></div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : accounts.length === 0 ? (
-              <EmptyAccounts onConnect={handleConnect} disabled={connectDisabled} />
-            ) : (
-              <>
-                <div className="mb-4" style={{ width: '100%', height: 200 }}>
-                  <ResponsiveContainer>
-                    <PieChart>
-                        <Pie data={accounts} dataKey="balance" nameKey="name" outerRadius={80}>
-                          {accounts.map((_, i) => (
-                            <Cell key={i} fill={chartColors[i % chartColors.length]} />
-                          ))}
-                        </Pie>
-                      <Tooltip
-                        formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="text-sm mb-4 space-y-1">
-                  {accounts.map((a) => (
-                    <li key={a.id} className="flex justify-between">
-                      <span>{a.name}</span>
-                      <span className="font-semibold">{formatCurrency(a.balance)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <LiquidButton onClick={handleConnect} disabled={connectDisabled}>
-              {loading ? 'Carregando...' : 'Conectar Conta'}
-            </LiquidButton>
-          </LiquidCard>
+          <AccountsCard
+            loading={loading}
+            accounts={accounts}
+            onConnect={handleConnect}
+            disabled={connectDisabled}
+          />
         </motion.section>
 
         <motion.section
@@ -726,73 +85,13 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <LiquidCard>
-            <h2 className="text-xl font-semibold mb-2">Transações</h2>
-            {loading ? (
-              <>
-                <ChartSkeleton height="200px" />
-                <div className="mt-4">
-                  <TransactionSkeleton />
-                </div>
-              </>
-            ) : transactions.length === 0 ? (
-              <EmptyTransactions onConnect={handleConnect} disabled={connectDisabled} />
-            ) : (
-              <>
-                <div style={{ width: '100%', height: 200 }}>
-                  <ResponsiveContainer>
-                    <BarChart data={transactions}>
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(d) => formatDateShort(d)}
-                        hide={transactions.length > 10}
-                      />
-                      <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
-                      <Tooltip
-                        labelFormatter={(d) => formatDate(d)}
-                        formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
-                      />
-                        <Bar dataKey="amount" fill={chartColors[0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="text-sm mt-4 space-y-1 max-h-48 overflow-auto">
-                  {transactions.slice(0, 10).map((t) => {
-                    const currencyData = formatCurrencyWithSign(t.amount)
-                    return (
-                      <li
-                        key={t.id}
-                        className="flex justify-between items-center p-2 hover:bg-card-glass/20 rounded"
-                      >
-                        <div>
-                          <div className="font-medium">{t.description}</div>
-                          <div className="text-slate-400 text-xs">{formatDate(t.date)}</div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className={`font-semibold ${currencyData.className}`}>
-                            {currencyData.value}
-                          </div>
-                          <LiquidButton
-                            size="sm"
-                            variant="outline"
-                            className="text-xs px-3 py-1"
-                            onClick={() => handleOpenTransactionModal(t.id)}
-                          >
-                            Editar
-                          </LiquidButton>
-                        </div>
-                      </li>
-                    )
-                  })}
-                  {transactions.length > 10 && (
-                    <li className="text-center text-slate-400 text-xs pt-2">
-                      +{transactions.length - 10} transações adicionais
-                    </li>
-                  )}
-                </ul>
-              </>
-            )}
-          </LiquidCard>
+          <TransactionsCard
+            loading={loading}
+            transactions={transactions}
+            onEdit={handleOpenTransactionModal}
+            onConnect={handleConnect}
+            disabled={connectDisabled}
+          />
         </motion.section>
 
         <motion.section
@@ -800,32 +99,7 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <LiquidCard>
-            <h2 className="text-xl font-semibold mb-2">Evolução de Saldos</h2>
-            {loading ? (
-              <ChartSkeleton height="200px" />
-            ) : balanceData.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">
-                <span className="text-4xl block mb-2">📈</span>
-                <p>Dados insuficientes para gerar gráfico</p>
-                <p className="text-sm">Adicione transações para ver a evolução</p>
-              </div>
-            ) : (
-              <div style={{ width: '100%', height: 200 }}>
-                <ResponsiveContainer>
-                  <LineChart data={balanceData}>
-                    <XAxis dataKey="date" tickFormatter={(d) => formatDateShort(d)} />
-                    <YAxis tickFormatter={(v) => formatCurrency(Number(v))} />
-                    <Tooltip
-                      labelFormatter={(d) => formatDate(d)}
-                      formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
-                    />
-                      <Line type="monotone" dataKey="balance" stroke={chartColors[1]} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </LiquidCard>
+          <BalanceEvolutionCard loading={loading} data={balanceData} />
         </motion.section>
 
         <motion.section
@@ -833,69 +107,17 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <LiquidCard>
-            <h2 className="text-xl font-semibold mb-2">Despesas por Categoria</h2>
-            {loading ? (
-              <ChartSkeleton height="200px" />
-            ) : categoryData.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">
-                <span className="text-4xl block mb-2">🏷️</span>
-                <p>Nenhuma despesa por categoria</p>
-                <p className="text-sm">Adicione transações de despesas para ver o resumo</p>
-              </div>
-            ) : (
-              <div style={{ width: '100%', height: 200 }}>
-                <ResponsiveContainer>
-                  <PieChart>
-                      <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80}>
-                        {categoryData.map((_, i) => (
-                          <Cell key={i} fill={chartColors[i % chartColors.length]} />
-                        ))}
-                      </Pie>
-                    <Tooltip
-                      formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </LiquidCard>
+          <ExpensesByCategoryCard loading={loading} data={categoryData} />
         </motion.section>
-
-        <motion.section
-          id="financial-calendar"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <LiquidCard>
-            <h2 className="text-xl font-semibold">Calendário Financeiro</h2>
-            <p className="text-sm text-slate-400 mt-1 mb-4">
-              Acompanhe o total diário de receitas e despesas.
-            </p>
-            {loading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-card-border/60 bg-card-glass/40 p-4"
-                  >
-                    <div className="mb-3 h-4 w-24 rounded bg-card-glass/60 animate-pulse" />
-                    <div className="mb-4 flex gap-3">
-                      <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
-                      <div className="h-16 flex-1 rounded-xl bg-card-glass/60 animate-pulse" />
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-card-glass/60 animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <TransactionCalendar days={calendarData} />
-            )}
-          </LiquidCard>
-        </motion.section>
-
-      {/* Novos componentes liquid glass disponíveis em components/ui/liquid-glass-button.tsx */}
       </div>
+
+      <motion.section
+        id="financial-calendar"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <FinancialCalendarCard loading={loading} days={calendarData} />
+      </motion.section>
 
       {isTransactionModalOpen && (
         <TransactionForm
