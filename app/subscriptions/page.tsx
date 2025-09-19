@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { SubscriptionForm } from '@/components/forms/subscription-form'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
 
 interface Subscription {
   id: string
@@ -21,82 +21,65 @@ interface Subscription {
   autoRenew: boolean
 }
 
+const subscriptionMessages: ResourceMessages = {
+  fetch: {
+    errorTitle: 'Não foi possível carregar as assinaturas.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao carregar assinaturas.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  create: {
+    errorTitle: 'Não foi possível criar a assinatura.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao criar assinatura.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  update: {
+    errorTitle: 'Não foi possível atualizar a assinatura.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao atualizar assinatura.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  delete: {
+    errorTitle: 'Não foi possível excluir a assinatura.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao excluir assinatura.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  }
+}
+
 export default function SubscriptionsPage() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null)
-  const [deletingSubscription, setDeletingSubscription] = useState<string | null>(null)
+  const {
+    items: subscriptions,
+    loading,
+    showCreateForm,
+    openCreateForm,
+    closeCreateForm,
+    editingItem: editingSubscription,
+    startEditing: startEditingSubscription,
+    cancelEditing: cancelEditingSubscription,
+    deletingItemId: deletingSubscription,
+    requestDelete: requestDeleteSubscription,
+    cancelDelete: cancelDeleteSubscription,
+    createItem: createSubscription,
+    updateItem: updateSubscription,
+    deleteItem: deleteSubscription
+  } = useResourceCrud<Subscription, Subscription, Subscription>({
+    baseUrl: '/api/subscriptions',
+    messages: subscriptionMessages
+  })
 
-  useEffect(() => {
-    loadSubscriptions()
-  }, [])
-
-  async function loadSubscriptions() {
-    try {
-      const res = await fetch('/api/subscriptions')
-      if (res.ok) {
-        const data = await res.json()
-        setSubscriptions(data)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar assinaturas:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleCreateSubscription = async (subscriptionData: Subscription) => {
+    await createSubscription(subscriptionData)
   }
 
-  async function handleCreateSubscription(subscriptionData: any) {
-    try {
-      const res = await fetch('/api/subscriptions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscriptionData)
-      })
-      
-      if (res.ok) {
-        const newSubscription = await res.json()
-        setSubscriptions(prev => [newSubscription, ...prev])
-        setShowCreateForm(false)
-      }
-    } catch (error) {
-      console.error('Erro ao criar assinatura:', error)
-    }
+  const handleEditSubscription = async (subscriptionData: Subscription) => {
+    if (!editingSubscription?.id) return
+    await updateSubscription(editingSubscription.id, subscriptionData)
   }
 
-  async function handleEditSubscription(subscriptionData: any) {
-    if (!editingSubscription) return
-    
-    try {
-      const res = await fetch(`/api/subscriptions/${editingSubscription.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscriptionData)
-      })
-      
-      if (res.ok) {
-        const updatedSubscription = await res.json()
-        setSubscriptions(prev => prev.map(s => s.id === editingSubscription.id ? updatedSubscription : s))
-        setEditingSubscription(null)
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar assinatura:', error)
-    }
-  }
-
-  async function handleDeleteSubscription(subscriptionId: string) {
-    try {
-      const res = await fetch(`/api/subscriptions/${subscriptionId}`, {
-        method: 'DELETE'
-      })
-      
-      if (res.ok) {
-        setSubscriptions(prev => prev.filter(s => s.id !== subscriptionId))
-        setDeletingSubscription(null)
-      }
-    } catch (error) {
-      console.error('Erro ao deletar assinatura:', error)
-    }
+  const handleDeleteSubscription = async (subscriptionId: string) => {
+    await deleteSubscription(subscriptionId)
   }
 
   const activeSubscriptions = subscriptions.filter(sub => sub.isActive)
@@ -148,9 +131,9 @@ export default function SubscriptionsPage() {
           <h1 className="text-3xl font-bold gradient-text">🔄 Assinaturas</h1>
           <p className="text-slate-400 mt-1">Gerencie suas assinaturas e gastos recorrentes</p>
         </div>
-        <LiquidButton 
-          variant="primary" 
-          onClick={() => setShowCreateForm(true)}
+        <LiquidButton
+          variant="primary"
+          onClick={openCreateForm}
           glowColor="#8b5cf6"
         >
           ➕ Nova Assinatura
@@ -203,9 +186,9 @@ export default function SubscriptionsPage() {
                   <div className="text-6xl mb-4">🔄</div>
                   <h3 className="text-xl font-semibold mb-2 text-white">Nenhuma assinatura cadastrada</h3>
                   <p className="text-slate-400 mb-6">Gerencie todas suas assinaturas e gastos recorrentes em um só lugar</p>
-                  <LiquidButton 
-                    variant="primary" 
-                    onClick={() => setShowCreateForm(true)}
+                  <LiquidButton
+                    variant="primary"
+                    onClick={openCreateForm}
                   >
                     Adicionar Primeira Assinatura
                   </LiquidButton>
@@ -241,7 +224,7 @@ export default function SubscriptionsPage() {
                                 size="sm"
                                 variant="outline"
                                 className="text-xs text-blue-300 border-blue-500/50 hover:bg-blue-500/10"
-                                onClick={() => setEditingSubscription(subscription)}
+                                onClick={() => startEditingSubscription(subscription)}
                               >
                                 ✏️ Editar
                               </LiquidButton>
@@ -249,7 +232,7 @@ export default function SubscriptionsPage() {
                                 size="sm"
                                 variant="outline"
                                 className="text-xs text-red-300 border-red-500/50 hover:bg-red-500/10"
-                                onClick={() => setDeletingSubscription(subscription.id)}
+                                onClick={() => requestDeleteSubscription(subscription.id)}
                               >
                                 🗑️ Excluir
                               </LiquidButton>
@@ -399,7 +382,7 @@ export default function SubscriptionsPage() {
       {showCreateForm && (
         <SubscriptionForm
           onSubmit={handleCreateSubscription}
-          onCancel={() => setShowCreateForm(false)}
+          onCancel={closeCreateForm}
         />
       )}
 
@@ -407,15 +390,15 @@ export default function SubscriptionsPage() {
         <SubscriptionForm
           subscription={editingSubscription}
           onSubmit={handleEditSubscription}
-          onCancel={() => setEditingSubscription(null)}
+          onCancel={cancelEditingSubscription}
         />
       )}
 
       <ConfirmDeleteModal
         isOpen={Boolean(deletingSubscription)}
         message="Tem certeza que deseja excluir esta assinatura? Esta ação não pode ser desfeita."
-        onCancel={() => setDeletingSubscription(null)}
-        onConfirm={() => handleDeleteSubscription(deletingSubscription!)}
+        onCancel={cancelDeleteSubscription}
+        onConfirm={() => deletingSubscription && handleDeleteSubscription(deletingSubscription)}
       />
     </div>
   )

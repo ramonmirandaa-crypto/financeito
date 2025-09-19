@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { LoanForm } from '@/components/forms/loan-form'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
 
 interface Loan {
   id: string
@@ -24,82 +24,65 @@ interface Loan {
   installmentCount?: number | null
 }
 
+const loanMessages: ResourceMessages = {
+  fetch: {
+    errorTitle: 'Não foi possível carregar os empréstimos.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao carregar empréstimos.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  create: {
+    errorTitle: 'Não foi possível criar o empréstimo.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao criar empréstimo.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  update: {
+    errorTitle: 'Não foi possível atualizar o empréstimo.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao atualizar empréstimo.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  delete: {
+    errorTitle: 'Não foi possível excluir o empréstimo.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao excluir empréstimo.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  }
+}
+
 export default function LoansPage() {
-  const [loans, setLoans] = useState<Loan[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [editingLoan, setEditingLoan] = useState<Loan | null>(null)
-  const [deletingLoan, setDeletingLoan] = useState<string | null>(null)
+  const {
+    items: loans,
+    loading,
+    showCreateForm,
+    openCreateForm,
+    closeCreateForm,
+    editingItem: editingLoan,
+    startEditing: startEditingLoan,
+    cancelEditing: cancelEditingLoan,
+    deletingItemId: deletingLoan,
+    requestDelete: requestDeleteLoan,
+    cancelDelete: cancelDeleteLoan,
+    createItem: createLoan,
+    updateItem: updateLoan,
+    deleteItem: deleteLoan
+  } = useResourceCrud<Loan, Loan, Loan>({
+    baseUrl: '/api/loans',
+    messages: loanMessages
+  })
 
-  useEffect(() => {
-    loadLoans()
-  }, [])
-
-  async function loadLoans() {
-    try {
-      const res = await fetch('/api/loans')
-      if (res.ok) {
-        const data = await res.json()
-        setLoans(data)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar empréstimos:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleCreateLoan = async (loanData: Loan) => {
+    await createLoan(loanData)
   }
 
-  async function handleCreateLoan(loanData: any) {
-    try {
-      const res = await fetch('/api/loans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loanData)
-      })
-      
-      if (res.ok) {
-        const newLoan = await res.json()
-        setLoans(prev => [newLoan, ...prev])
-        setShowCreateForm(false)
-      }
-    } catch (error) {
-      console.error('Erro ao criar empréstimo:', error)
-    }
+  const handleEditLoan = async (loanData: Loan) => {
+    if (!editingLoan?.id) return
+    await updateLoan(editingLoan.id, loanData)
   }
 
-  async function handleEditLoan(loanData: any) {
-    if (!editingLoan) return
-    
-    try {
-      const res = await fetch(`/api/loans/${editingLoan.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loanData)
-      })
-      
-      if (res.ok) {
-        const updatedLoan = await res.json()
-        setLoans(prev => prev.map(l => l.id === editingLoan.id ? updatedLoan : l))
-        setEditingLoan(null)
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar empréstimo:', error)
-    }
-  }
-
-  async function handleDeleteLoan(loanId: string) {
-    try {
-      const res = await fetch(`/api/loans/${loanId}`, {
-        method: 'DELETE'
-      })
-      
-      if (res.ok) {
-        setLoans(prev => prev.filter(l => l.id !== loanId))
-        setDeletingLoan(null)
-      }
-    } catch (error) {
-      console.error('Erro ao deletar empréstimo:', error)
-    }
+  const handleDeleteLoan = async (loanId: string) => {
+    await deleteLoan(loanId)
   }
 
   const lentLoans = loans.filter(loan => loan.type === 'lent')
@@ -135,9 +118,9 @@ export default function LoansPage() {
           <h1 className="text-3xl font-bold gradient-text">💰 Empréstimos Familiares</h1>
           <p className="text-slate-400 mt-1">Controle empréstimos feitos e recebidos entre família e amigos</p>
         </div>
-        <LiquidButton 
-          variant="primary" 
-          onClick={() => setShowCreateForm(true)}
+        <LiquidButton
+          variant="primary"
+          onClick={openCreateForm}
           glowColor="#f59e0b"
         >
           ➕ Novo Empréstimo
@@ -190,9 +173,9 @@ export default function LoansPage() {
                   <div className="text-6xl mb-4">💰</div>
                   <h3 className="text-xl font-semibold mb-2 text-white">Nenhum empréstimo registrado</h3>
                   <p className="text-slate-400 mb-6">Registre empréstimos familiares para manter o controle financeiro</p>
-                  <LiquidButton 
-                    variant="primary" 
-                    onClick={() => setShowCreateForm(true)}
+                  <LiquidButton
+                    variant="primary"
+                    onClick={openCreateForm}
                   >
                     Registrar Primeiro Empréstimo
                   </LiquidButton>
@@ -226,7 +209,7 @@ export default function LoansPage() {
                                 size="sm"
                                 variant="outline"
                                 className="text-xs text-blue-300 border-blue-500/50 hover:bg-blue-500/10"
-                                onClick={() => setEditingLoan(loan)}
+                                onClick={() => startEditingLoan(loan)}
                               >
                                 ✏️ Editar
                               </LiquidButton>
@@ -234,7 +217,7 @@ export default function LoansPage() {
                                 size="sm"
                                 variant="outline"
                                 className="text-xs text-red-300 border-red-500/50 hover:bg-red-500/10"
-                                onClick={() => setDeletingLoan(loan.id)}
+                                onClick={() => requestDeleteLoan(loan.id)}
                               >
                                 🗑️ Excluir
                               </LiquidButton>
@@ -412,7 +395,7 @@ export default function LoansPage() {
       {showCreateForm && (
         <LoanForm
           onSubmit={handleCreateLoan}
-          onCancel={() => setShowCreateForm(false)}
+          onCancel={closeCreateForm}
         />
       )}
 
@@ -420,15 +403,15 @@ export default function LoansPage() {
         <LoanForm
           loan={editingLoan}
           onSubmit={handleEditLoan}
-          onCancel={() => setEditingLoan(null)}
+          onCancel={cancelEditingLoan}
         />
       )}
 
       <ConfirmDeleteModal
         isOpen={Boolean(deletingLoan)}
         message="Tem certeza que deseja excluir este empréstimo? Esta ação não pode ser desfeita."
-        onCancel={() => setDeletingLoan(null)}
-        onConfirm={() => handleDeleteLoan(deletingLoan!)}
+        onCancel={cancelDeleteLoan}
+        onConfirm={() => deletingLoan && handleDeleteLoan(deletingLoan)}
       />
     </div>
   )

@@ -1,7 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
@@ -10,183 +9,85 @@ import { BudgetForm } from '@/components/forms/budget-form'
 import { Budget } from '@/types/budget'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import { chartColors } from '@/lib/theme'
-import { useToast } from '@/hooks/use-toast'
+import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
+
+const budgetMessages: ResourceMessages = {
+  fetch: {
+    errorTitle: 'Não foi possível carregar os orçamentos.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao carregar orçamentos.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  create: {
+    errorTitle: 'Não foi possível criar o orçamento.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao criar orçamento.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  update: {
+    errorTitle: 'Não foi possível atualizar o orçamento.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao atualizar orçamento.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  delete: {
+    errorTitle: 'Não foi possível excluir o orçamento.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao excluir orçamento.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  }
+}
+
+const prepareBudgetPayload = (budgetData: Budget) => ({
+  name: budgetData.name,
+  totalAmount: Number(budgetData.totalAmount),
+  currency: budgetData.currency || 'BRL',
+  period: budgetData.period || 'monthly',
+  startDate: budgetData.startDate,
+  endDate: budgetData.endDate,
+  items: budgetData.items?.map(item => ({
+    name: item.name,
+    category: item.category,
+    amount: Number(item.amount ?? 0),
+    spent: Number(item.spent ?? 0),
+    currency: item.currency || budgetData.currency || 'BRL'
+  })) || []
+})
 
 function BudgetPageContent() {
-  const [budgets, setBudgets] = useState<Budget[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
-  const [deletingBudget, setDeletingBudget] = useState<string | null>(null)
-  const [hasOpenedFromQuery, setHasOpenedFromQuery] = useState(false)
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
-  const { toast } = useToast()
-
-  const handleUnauthorized = () => {
-    toast.error('Sessão expirada', 'Faça login novamente para continuar.')
-    router.push('/login')
-  }
-
-  const extractErrorMessage = async (res: Response) => {
-    try {
-      const data = await res.json()
-      if (typeof data === 'string') {
-        return data
-      }
-      return data?.message || data?.error
-    } catch {
-      return undefined
-    }
-  }
-
-  useEffect(() => {
-    loadBudgets()
-  }, [])
-
-  useEffect(() => {
-    if (hasOpenedFromQuery) {
-      return
-    }
-
-    if (searchParams?.get('create') === '1') {
-      setShowCreateForm(true)
-      setHasOpenedFromQuery(true)
-
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('create')
-      const queryString = params.toString()
-      router.replace(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false })
-    }
-  }, [hasOpenedFromQuery, pathname, router, searchParams])
-
-  async function loadBudgets() {
-    try {
-      const res = await fetch('/api/budget')
-      if (!res.ok) {
-        if (res.status === 401) {
-          handleUnauthorized()
-          return
-        }
-
-        const message = await extractErrorMessage(res)
-        toast.error('Não foi possível carregar os orçamentos.', message ?? 'Tente novamente em instantes.')
-        return
-      }
-
-      const data = await res.json()
-      setBudgets(data)
-    } catch (error) {
-      console.error('Erro ao carregar orçamentos:', error)
-      toast.error('Erro ao carregar orçamentos.', 'Verifique sua conexão e tente novamente.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const prepareBudgetPayload = (budgetData: Budget) => ({
-    name: budgetData.name,
-    totalAmount: Number(budgetData.totalAmount),
-    currency: budgetData.currency || 'BRL',
-    period: budgetData.period || 'monthly',
-    startDate: budgetData.startDate,
-    endDate: budgetData.endDate,
-    items: budgetData.items?.map(item => ({
-      name: item.name,
-      category: item.category,
-      amount: Number(item.amount ?? 0),
-      spent: Number(item.spent ?? 0),
-      currency: item.currency || budgetData.currency || 'BRL'
-    })) || []
+  const {
+    items: budgets,
+    loading,
+    showCreateForm,
+    openCreateForm,
+    closeCreateForm,
+    editingItem: editingBudget,
+    startEditing: startEditingBudget,
+    cancelEditing: cancelEditingBudget,
+    deletingItemId: deletingBudgetId,
+    requestDelete: requestDeleteBudget,
+    cancelDelete: cancelDeleteBudget,
+    createItem: createBudget,
+    updateItem: updateBudget,
+    deleteItem: deleteBudget
+  } = useResourceCrud<Budget, Budget, Budget>({
+    baseUrl: '/api/budget',
+    getCreatePayload: prepareBudgetPayload,
+    getUpdatePayload: (data) => prepareBudgetPayload(data),
+    messages: budgetMessages
   })
 
-  async function handleCreateBudget(budgetData: Budget) {
-    try {
-      const payload = prepareBudgetPayload(budgetData)
-
-      const res = await fetch('/api/budget', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          handleUnauthorized()
-          return
-        }
-
-        const message = await extractErrorMessage(res)
-        toast.error('Não foi possível criar o orçamento.', message ?? 'Tente novamente em instantes.')
-        return
-      }
-
-      const newBudget = await res.json()
-      setBudgets(prev => [newBudget, ...prev])
-      setShowCreateForm(false)
-    } catch (error) {
-      console.error('Erro ao criar orçamento:', error)
-      toast.error('Erro ao criar orçamento.', 'Verifique sua conexão e tente novamente.')
-    }
+  const handleCreateBudget = async (budgetData: Budget) => {
+    await createBudget(budgetData)
   }
 
-  async function handleEditBudget(budgetData: Budget) {
-    if (!editingBudget) return
-
-    try {
-      const payload = prepareBudgetPayload(budgetData)
-
-      const res = await fetch(`/api/budget/${editingBudget.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          handleUnauthorized()
-          return
-        }
-
-        const message = await extractErrorMessage(res)
-        toast.error('Não foi possível atualizar o orçamento.', message ?? 'Tente novamente em instantes.')
-        return
-      }
-
-      const updatedBudget = await res.json()
-      setBudgets(prev => prev.map(b => b.id === editingBudget.id ? updatedBudget : b))
-      setEditingBudget(null)
-    } catch (error) {
-      console.error('Erro ao atualizar orçamento:', error)
-      toast.error('Erro ao atualizar orçamento.', 'Verifique sua conexão e tente novamente.')
-    }
+  const handleEditBudget = async (budgetData: Budget) => {
+    if (!editingBudget?.id) return
+    await updateBudget(editingBudget.id, budgetData)
   }
 
-  async function handleDeleteBudget(budgetId: string) {
-    try {
-      const res = await fetch(`/api/budget/${budgetId}`, {
-        method: 'DELETE'
-      })
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          handleUnauthorized()
-          return
-        }
-
-        const message = await extractErrorMessage(res)
-        toast.error('Não foi possível excluir o orçamento.', message ?? 'Tente novamente em instantes.')
-        return
-      }
-
-      setBudgets(prev => prev.filter(b => b.id !== budgetId))
-    } catch (error) {
-      console.error('Erro ao deletar orçamento:', error)
-      toast.error('Erro ao excluir orçamento.', 'Verifique sua conexão e tente novamente.')
-    } finally {
-      setDeletingBudget(null)
-    }
+  const handleDeleteBudget = async (budgetId: string) => {
+    await deleteBudget(budgetId)
   }
 
 
@@ -204,9 +105,9 @@ function BudgetPageContent() {
           <h1 className="text-3xl font-bold gradient-text">💰 Orçamento</h1>
           <p className="text-slate-400 mt-1">Gerencie seus gastos e mantenha o controle financeiro</p>
         </div>
-        <LiquidButton 
-          variant="primary" 
-          onClick={() => setShowCreateForm(true)}
+        <LiquidButton
+          variant="primary"
+          onClick={openCreateForm}
           glowColor="#3b82f6"
         >
           ➕ Novo Orçamento
@@ -332,9 +233,9 @@ function BudgetPageContent() {
                   <div className="text-6xl mb-4">📊</div>
                   <h3 className="text-xl font-semibold mb-2 text-white">Nenhum orçamento ativo</h3>
                   <p className="text-slate-400 mb-6">Crie seu primeiro orçamento para começar a controlar seus gastos</p>
-                  <LiquidButton 
-                    variant="primary" 
-                    onClick={() => setShowCreateForm(true)}
+                  <LiquidButton
+                    variant="primary"
+                    onClick={openCreateForm}
                   >
                     Criar Orçamento
                   </LiquidButton>
@@ -362,14 +263,14 @@ function BudgetPageContent() {
                             </span>
                           )}
                           <button
-                            onClick={() => setEditingBudget(budget)}
+                            onClick={() => startEditingBudget(budget)}
                             className="text-blue-400 hover:text-blue-300 text-xs"
                             title="Editar"
                           >
                             ✏️
                           </button>
                           <button
-                            onClick={() => setDeletingBudget(budget.id!)}
+                            onClick={() => requestDeleteBudget(budget.id!)}
                             className="text-red-400 hover:text-red-300 text-xs"
                             title="Excluir"
                           >
@@ -413,7 +314,7 @@ function BudgetPageContent() {
       {showCreateForm && (
         <BudgetForm
           onSubmit={handleCreateBudget}
-          onCancel={() => setShowCreateForm(false)}
+          onCancel={closeCreateForm}
         />
       )}
 
@@ -421,15 +322,15 @@ function BudgetPageContent() {
         <BudgetForm
           budget={editingBudget}
           onSubmit={handleEditBudget}
-          onCancel={() => setEditingBudget(null)}
+          onCancel={cancelEditingBudget}
         />
       )}
 
       <ConfirmDeleteModal
-        isOpen={Boolean(deletingBudget)}
+        isOpen={Boolean(deletingBudgetId)}
         message="Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita."
-        onCancel={() => setDeletingBudget(null)}
-        onConfirm={() => handleDeleteBudget(deletingBudget!)}
+        onCancel={cancelDeleteBudget}
+        onConfirm={() => deletingBudgetId && handleDeleteBudget(deletingBudgetId)}
       />
     </div>
   )

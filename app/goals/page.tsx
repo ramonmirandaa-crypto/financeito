@@ -1,13 +1,13 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { GoalForm } from '@/components/forms/goal-form'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
+import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
 
 interface Goal {
   id: string
@@ -22,102 +22,65 @@ interface Goal {
   priority: string
 }
 
+const goalMessages: ResourceMessages = {
+  fetch: {
+    errorTitle: 'Não foi possível carregar as metas.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao carregar metas.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  create: {
+    errorTitle: 'Não foi possível criar a meta.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao criar meta.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  update: {
+    errorTitle: 'Não foi possível atualizar a meta.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao atualizar meta.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  },
+  delete: {
+    errorTitle: 'Não foi possível excluir a meta.',
+    fallbackMessage: 'Tente novamente em instantes.',
+    networkErrorTitle: 'Erro ao excluir meta.',
+    networkFallbackMessage: 'Verifique sua conexão e tente novamente.'
+  }
+}
+
 function GoalsPageContent() {
-  const [goals, setGoals] = useState<Goal[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
-  const [deletingGoal, setDeletingGoal] = useState<string | null>(null)
-  const [hasOpenedFromQuery, setHasOpenedFromQuery] = useState(false)
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const {
+    items: goals,
+    loading,
+    showCreateForm,
+    openCreateForm,
+    closeCreateForm,
+    editingItem: editingGoal,
+    startEditing: startEditingGoal,
+    cancelEditing: cancelEditingGoal,
+    deletingItemId: deletingGoal,
+    requestDelete: requestDeleteGoal,
+    cancelDelete: cancelDeleteGoal,
+    createItem: createGoal,
+    updateItem: updateGoal,
+    deleteItem: deleteGoal
+  } = useResourceCrud<Goal, Goal, Goal>({
+    baseUrl: '/api/goals',
+    messages: goalMessages
+  })
 
-  useEffect(() => {
-    loadGoals()
-  }, [])
-
-  useEffect(() => {
-    if (hasOpenedFromQuery) {
-      return
-    }
-
-    if (searchParams?.get('create') === '1') {
-      setShowCreateForm(true)
-      setHasOpenedFromQuery(true)
-
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('create')
-      const queryString = params.toString()
-      router.replace(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false })
-    }
-  }, [hasOpenedFromQuery, pathname, router, searchParams])
-
-  async function loadGoals() {
-    try {
-      const res = await fetch('/api/goals')
-      if (res.ok) {
-        const data = await res.json()
-        setGoals(data)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar metas:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleCreateGoal = async (goalData: Goal) => {
+    await createGoal(goalData)
   }
 
-  async function handleCreateGoal(goalData: any) {
-    try {
-      const res = await fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(goalData)
-      })
-      
-      if (res.ok) {
-        const newGoal = await res.json()
-        setGoals(prev => [newGoal, ...prev])
-        setShowCreateForm(false)
-      }
-    } catch (error) {
-      console.error('Erro ao criar meta:', error)
-    }
+  const handleEditGoal = async (goalData: Goal) => {
+    if (!editingGoal?.id) return
+    await updateGoal(editingGoal.id, goalData)
   }
 
-  async function handleEditGoal(goalData: any) {
-    if (!editingGoal) return
-    
-    try {
-      const res = await fetch(`/api/goals/${editingGoal.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(goalData)
-      })
-      
-      if (res.ok) {
-        const updatedGoal = await res.json()
-        setGoals(prev => prev.map(g => g.id === editingGoal.id ? updatedGoal : g))
-        setEditingGoal(null)
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar meta:', error)
-    }
-  }
-
-  async function handleDeleteGoal(goalId: string) {
-    try {
-      const res = await fetch(`/api/goals/${goalId}`, {
-        method: 'DELETE'
-      })
-      
-      if (res.ok) {
-        setGoals(prev => prev.filter(g => g.id !== goalId))
-        setDeletingGoal(null)
-      }
-    } catch (error) {
-      console.error('Erro ao deletar meta:', error)
-    }
+  const handleDeleteGoal = async (goalId: string) => {
+    await deleteGoal(goalId)
   }
 
   const totalGoalsValue = goals.reduce((acc, goal) => acc + goal.targetAmount, 0)
@@ -159,9 +122,9 @@ function GoalsPageContent() {
           <h1 className="text-3xl font-bold gradient-text">🎯 Metas Financeiras</h1>
           <p className="text-slate-400 mt-1">Defina objetivos e acompanhe seu progresso</p>
         </div>
-        <LiquidButton 
-          variant="primary" 
-          onClick={() => setShowCreateForm(true)}
+        <LiquidButton
+          variant="primary"
+          onClick={openCreateForm}
           glowColor="#10b981"
         >
           ➕ Nova Meta
@@ -214,9 +177,9 @@ function GoalsPageContent() {
                   <div className="text-6xl mb-4">🎯</div>
                   <h3 className="text-xl font-semibold mb-2 text-white">Nenhuma meta criada</h3>
                   <p className="text-slate-400 mb-6">Defina seus objetivos financeiros e acompanhe seu progresso</p>
-                  <LiquidButton 
-                    variant="primary" 
-                    onClick={() => setShowCreateForm(true)}
+                  <LiquidButton
+                    variant="primary"
+                    onClick={openCreateForm}
                   >
                     Criar Primeira Meta
                   </LiquidButton>
@@ -255,7 +218,7 @@ function GoalsPageContent() {
                           <span className="text-xs text-slate-400 capitalize">{goal.priority}</span>
                           <button
                             type="button"
-                            onClick={() => setEditingGoal(goal)}
+                            onClick={() => startEditingGoal(goal)}
                             className="text-blue-400 hover:text-blue-300 text-xs"
                             title="Editar"
                           >
@@ -263,7 +226,7 @@ function GoalsPageContent() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setDeletingGoal(goal.id)}
+                            onClick={() => requestDeleteGoal(goal.id)}
                             className="text-red-400 hover:text-red-300 text-xs"
                             title="Excluir"
                           >
@@ -366,7 +329,7 @@ function GoalsPageContent() {
       {showCreateForm && (
         <GoalForm
           onSubmit={handleCreateGoal}
-          onCancel={() => setShowCreateForm(false)}
+          onCancel={closeCreateForm}
         />
       )}
 
@@ -374,15 +337,15 @@ function GoalsPageContent() {
         <GoalForm
           goal={editingGoal}
           onSubmit={handleEditGoal}
-          onCancel={() => setEditingGoal(null)}
+          onCancel={cancelEditingGoal}
         />
       )}
 
       <ConfirmDeleteModal
         isOpen={Boolean(deletingGoal)}
         message="Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita."
-        onCancel={() => setDeletingGoal(null)}
-        onConfirm={() => handleDeleteGoal(deletingGoal!)}
+        onCancel={cancelDeleteGoal}
+        onConfirm={() => deletingGoal && handleDeleteGoal(deletingGoal)}
       />
     </div>
   )
