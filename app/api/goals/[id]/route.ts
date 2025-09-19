@@ -68,10 +68,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'targetDate')) {
-      if (data.targetDate) {
-        updateData.targetDate = new Date(data.targetDate)
-      } else if (data.targetDate === null) {
+      const targetDateValue = data.targetDate
+
+      if (targetDateValue === null || (typeof targetDateValue === 'string' && targetDateValue.trim() === '')) {
         updateData.targetDate = null
+      } else if (targetDateValue !== undefined) {
+        const parsedTargetDate = new Date(targetDateValue)
+        if (Number.isNaN(parsedTargetDate.getTime())) {
+          return NextResponse.json({ error: 'Campo targetDate inválido' }, { status: 400 })
+        }
+
+        updateData.targetDate = parsedTargetDate
       }
     }
 

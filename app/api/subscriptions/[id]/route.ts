@@ -58,10 +58,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'nextBilling')) {
-      if (data.nextBilling) {
-        updateData.nextBilling = new Date(data.nextBilling)
-      } else if (data.nextBilling === null) {
+      const nextBillingValue = data.nextBilling
+
+      if (nextBillingValue === null || (typeof nextBillingValue === 'string' && nextBillingValue.trim() === '')) {
         updateData.nextBilling = null
+      } else if (nextBillingValue !== undefined) {
+        const parsedNextBilling = new Date(nextBillingValue)
+        if (Number.isNaN(parsedNextBilling.getTime())) {
+          return NextResponse.json({ error: 'Campo nextBilling inválido' }, { status: 400 })
+        }
+
+        updateData.nextBilling = parsedNextBilling
       }
     }
 
