@@ -145,6 +145,9 @@ git pull origin main
 # Instalar dependências (caso tenham mudado)
 npm install --production
 
+# Se scripts de instalação forem ignorados (ex.: `npm ci --ignore-scripts`), gere o Prisma Client manualmente
+npm run db:generate
+
 # Build da aplicação
 npm run build
 
