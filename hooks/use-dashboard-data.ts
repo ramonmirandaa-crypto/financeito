@@ -551,14 +551,14 @@ export const useDashboardData = () => {
       ...subscriptions
         .filter(
           (subscription) =>
-            subscription.nextBillingDate &&
-            isUpcoming(subscription.nextBillingDate, 7),
+            subscription.nextBilling &&
+            isUpcoming(subscription.nextBilling, 7),
         )
         .map((subscription) => ({
           type: 'Assinatura',
           name: subscription.name,
-          date: subscription.nextBillingDate,
-          amount: subscription.price,
+          date: subscription.nextBilling,
+          amount: subscription.amount,
         })),
       ...loans
         .filter(
