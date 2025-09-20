@@ -1,5 +1,5 @@
 import { formatDateToISODate } from '@/lib/format-utils'
-import type { TransactionFormData } from '@/components/forms/transaction-form'
+import type { TransactionFormData } from '@/lib/validation/transaction'
 
 export interface NormalizedTransaction {
   id: string

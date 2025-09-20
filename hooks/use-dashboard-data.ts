@@ -12,10 +12,8 @@ import {
   type PaginatedTransactionsResponse,
   type TransactionsPageMeta,
 } from '@/lib/transactions'
-import type {
-  ManualAccountOption,
-  TransactionFormData,
-} from '@/components/forms/transaction-form'
+import type { ManualAccountOption } from '@/components/forms/transaction-form'
+import type { TransactionFormData } from '@/lib/validation/transaction'
 import type { ManualAccountFormData } from '@/components/forms/manual-account-form'
 import type { QuickAction } from '@/components/quick-actions'
 import { navigationItems } from '@/config/navigation'

@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { transactionUpdateSchema } from '@/lib/validation/transaction'
 
 const adjustManualAccountBalance = async (
   accountId: string,
@@ -69,29 +70,23 @@ export async function PUT(
     await ensureUser(userId)
 
     const id = params.id
-    const { description, category, amount, date, accountId } = await request.json()
+    const body = await request.json()
+    const parsedResult = transactionUpdateSchema.safeParse(body)
 
-    if (typeof description !== 'string' || !description.trim()) {
-      return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 })
+    if (!parsedResult.success) {
+      const { fieldErrors, formErrors } = parsedResult.error.flatten()
+      return NextResponse.json(
+        {
+          error: 'Dados inválidos',
+          fieldErrors,
+          formErrors,
+        },
+        { status: 400 },
+      )
     }
 
-    if (amount === undefined || amount === null) {
-      return NextResponse.json({ error: 'Valor é obrigatório' }, { status: 400 })
-    }
-
-    const numericAmount = Number(amount)
-    if (Number.isNaN(numericAmount)) {
-      return NextResponse.json({ error: 'Valor inválido' }, { status: 400 })
-    }
-
-    if (typeof date !== 'string' || !date) {
-      return NextResponse.json({ error: 'Data é obrigatória' }, { status: 400 })
-    }
-
+    const { description, category, amount, date, accountId } = parsedResult.data
     const parsedDate = new Date(date)
-    if (Number.isNaN(parsedDate.getTime())) {
-      return NextResponse.json({ error: 'Data inválida' }, { status: 400 })
-    }
 
     const existingTransaction = await prisma.transaction.findFirst({
       where: {
@@ -105,21 +100,23 @@ export async function PUT(
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    const trimmedAccountId =
-      typeof accountId === 'string' && accountId.trim() !== ''
-        ? accountId.trim()
-        : ''
-
     let targetAccount: typeof existingTransaction.bankAccount | null =
       existingTransaction.bankAccount
 
-    if (trimmedAccountId) {
+    if (accountId) {
       targetAccount = await prisma.bankAccount.findFirst({
-        where: { id: trimmedAccountId, userId },
+        where: { id: accountId, userId },
       })
 
       if (!targetAccount) {
-        return NextResponse.json({ error: 'Conta bancária inválida' }, { status: 400 })
+        return NextResponse.json(
+          {
+            error: 'Conta bancária inválida',
+            fieldErrors: { accountId: ['Conta bancária inválida'] },
+            formErrors: [],
+          },
+          { status: 400 },
+        )
       }
     } else if (!targetAccount) {
       targetAccount = await prisma.bankAccount.findFirst({
@@ -150,12 +147,9 @@ export async function PUT(
       where: { id },
       data: {
         accountId: targetAccount?.id ?? existingTransaction.accountId,
-        description: description.trim(),
-        category:
-          typeof category === 'string' && category.trim() !== ''
-            ? category.trim()
-            : null,
-        amount: new Prisma.Decimal(numericAmount),
+        description,
+        category,
+        amount: new Prisma.Decimal(amount),
         date: parsedDate,
         currency: targetAccount?.currency || existingTransaction.currency,
       },
@@ -166,7 +160,7 @@ export async function PUT(
         if (targetAccount.provider === 'manual') {
           await adjustManualAccountBalance(
             targetAccount.id,
-            numericAmount - previousAmount
+            amount - previousAmount
           )
         }
       } else {
@@ -175,7 +169,7 @@ export async function PUT(
         }
 
         if (targetAccount.provider === 'manual') {
-          await adjustManualAccountBalance(targetAccount.id, numericAmount)
+          await adjustManualAccountBalance(targetAccount.id, amount)
         }
       }
     }
