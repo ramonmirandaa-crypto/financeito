@@ -10,6 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const allowedLogHostnames = (process.env.NEXT_PUBLIC_ALLOWED_LOG_HOSTNAMES ?? 'localhost,192.168.0.18')
+  .split(',')
+  .map((hostname) => hostname.trim())
+  .filter(Boolean);
+
+const isAllowedLogHostname = () =>
+  typeof window !== 'undefined' && allowedLogHostnames.includes(window.location.hostname);
+
 interface CustomSignInProps {
   redirectUrl?: string;
 }
@@ -57,7 +65,7 @@ export default function CustomSignIn({ redirectUrl = "/dashboard" }: CustomSignI
       }
       
       // Log detailed error for debugging (only in development)
-      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      if (isAllowedLogHostname()) {
         console.error('Login error:', err.errors?.[0]);
       }
     }
