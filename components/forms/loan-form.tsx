@@ -6,7 +6,7 @@ import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { LiquidInput } from '@/components/ui/liquid-input'
 
-interface Loan {
+export interface LoanFormData {
   id?: string
   title: string
   description?: string
@@ -22,14 +22,14 @@ interface Loan {
 }
 
 interface LoanFormProps {
-  loan?: Loan
-  onSubmit: (loan: Loan) => Promise<void>
+  loan?: LoanFormData
+  onSubmit: (loan: LoanFormData) => Promise<void>
   onCancel: () => void
   loading?: boolean
 }
 
 export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
-  const [formData, setFormData] = useState<Loan>({
+  const [formData, setFormData] = useState<LoanFormData>({
     title: loan?.title || '',
     description: loan?.description || '',
     amount: loan?.amount || 0,
@@ -246,7 +246,7 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 <LiquidInput
                   type="number"
                   step="0.01"
-                  value={formData.interestRate}
+                  value={formData.interestRate ?? ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, interestRate: parseFloat(e.target.value) || 0 }))}
                   placeholder="0,00"
                   className="focus:ring-2 focus:ring-yellow-500"
@@ -259,7 +259,7 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
                 </label>
                 <LiquidInput
                   type="date"
-                  value={formData.dueDate}
+                  value={formData.dueDate ?? ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
                   className="focus:ring-2 focus:ring-yellow-500"
                 />

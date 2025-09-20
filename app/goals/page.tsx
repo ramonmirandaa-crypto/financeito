@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
-import { GoalForm } from '@/components/forms/goal-form'
+import { GoalForm, type GoalFormData } from '@/components/forms/goal-form'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
 
@@ -65,16 +65,16 @@ function GoalsPageContent() {
     createItem: createGoal,
     updateItem: updateGoal,
     deleteItem: deleteGoal
-  } = useResourceCrud<Goal, Goal, Goal>({
+  } = useResourceCrud<Goal, GoalFormData, GoalFormData>({
     baseUrl: '/api/goals',
     messages: goalMessages
   })
 
-  const handleCreateGoal = async (goalData: Goal) => {
+  const handleCreateGoal = async (goalData: GoalFormData) => {
     await createGoal(goalData)
   }
 
-  const handleEditGoal = async (goalData: Goal) => {
+  const handleEditGoal = async (goalData: GoalFormData) => {
     if (!editingGoal?.id) return
     await updateGoal(editingGoal.id, goalData)
   }
