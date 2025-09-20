@@ -18,7 +18,11 @@ export default function Dashboard() {
   const {
     accounts,
     transactions,
+    transactionsMeta,
+    transactionPage,
+    transactionsPageSize,
     loading,
+    loadingTransactions,
     quickActions,
     quickAccessItems,
     connectDisabled,
@@ -43,6 +47,7 @@ export default function Dashboard() {
     closeManualAccountModal,
     handleSubmitManualAccount,
     handleConnect,
+    handleTransactionsPageChange,
   } = useDashboardData()
 
   return (
@@ -86,8 +91,14 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
         >
           <TransactionsCard
-            loading={loading}
+            loading={loading || loadingTransactions}
             transactions={transactions}
+            page={transactionsMeta?.page ?? transactionPage}
+            pageSize={transactionsMeta?.pageSize ?? transactionsPageSize}
+            totalCount={transactionsMeta?.totalCount ?? transactions.length}
+            hasNextPage={Boolean(transactionsMeta?.hasNextPage)}
+            hasPreviousPage={Boolean(transactionsMeta?.hasPreviousPage)}
+            onPageChange={handleTransactionsPageChange}
             onEdit={handleOpenTransactionModal}
             onConnect={handleConnect}
             disabled={connectDisabled}

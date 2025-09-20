@@ -52,6 +52,84 @@ const adjustManualAccountBalance = async (
   })
 }
 
+const DEFAULT_PAGE = 1
+const DEFAULT_PAGE_SIZE = 10
+const MAX_PAGE_SIZE = 100
+
+const parsePaginationParam = (value: string | null, fallback: number) => {
+  if (!value) return fallback
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return NaN
+  }
+  return parsed
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const pageParam = parsePaginationParam(
+      searchParams.get('page'),
+      DEFAULT_PAGE,
+    )
+    const pageSizeParam = parsePaginationParam(
+      searchParams.get('pageSize'),
+      DEFAULT_PAGE_SIZE,
+    )
+
+    if (Number.isNaN(pageParam)) {
+      return NextResponse.json({ error: 'Página inválida' }, { status: 400 })
+    }
+
+    if (Number.isNaN(pageSizeParam)) {
+      return NextResponse.json({ error: 'Tamanho de página inválido' }, {
+        status: 400,
+      })
+    }
+
+    const pageSize = Math.min(pageSizeParam, MAX_PAGE_SIZE)
+    const page = pageParam
+    const skip = (page - 1) * pageSize
+
+    await ensureUser(userId)
+
+    const [totalCount, transactions] = await Promise.all([
+      prisma.transaction.count({ where: { userId } }),
+      prisma.transaction.findMany({
+        where: { userId },
+        orderBy: [
+          { date: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        skip,
+        take: pageSize,
+      }),
+    ])
+
+    const totalPages = pageSize === 0 ? 0 : Math.ceil(totalCount / pageSize)
+
+    return NextResponse.json({
+      data: transactions.map((transaction) => serializeTransaction(transaction)),
+      meta: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    })
+  } catch (error) {
+    console.error('Erro ao listar transações:', error)
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth()

@@ -24,6 +24,12 @@ import type { NormalizedTransaction } from '@/lib/transactions'
 interface TransactionsCardProps {
   loading: boolean
   transactions: NormalizedTransaction[]
+  page: number
+  pageSize: number
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  onPageChange: (page: number) => void
   onEdit: (transactionId: string) => void
   onConnect: () => void
   disabled: boolean
@@ -32,10 +38,33 @@ interface TransactionsCardProps {
 export function TransactionsCard({
   loading,
   transactions,
+  page,
+  pageSize,
+  totalCount,
+  hasNextPage,
+  hasPreviousPage,
+  onPageChange,
   onEdit,
   onConnect,
   disabled,
 }: TransactionsCardProps) {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
+  const safePageSize =
+    Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 1
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / safePageSize) : 1
+  const hasTransactionsOnPage = transactions.length > 0
+  const startItem =
+    totalCount > 0
+      ? Math.min((safePage - 1) * safePageSize + 1, totalCount)
+      : 0
+  const endItem = hasTransactionsOnPage
+    ? Math.min(startItem + transactions.length - 1, totalCount)
+    : totalCount > 0
+      ? Math.min(safePage * safePageSize, totalCount)
+      : 0
+  const displayStart = hasTransactionsOnPage ? startItem : 0
+  const displayEnd = hasTransactionsOnPage ? Math.max(endItem, startItem) : 0
+
   return (
     <LiquidCard>
       <h2 className="text-xl font-semibold mb-2">Transações</h2>
@@ -46,8 +75,12 @@ export function TransactionsCard({
             <TransactionSkeleton />
           </div>
         </>
-      ) : transactions.length === 0 ? (
+      ) : totalCount === 0 ? (
         <EmptyTransactions onConnect={onConnect} disabled={disabled} />
+      ) : transactions.length === 0 ? (
+        <div className="text-sm text-slate-400">
+          Nenhuma transação encontrada nesta página.
+        </div>
       ) : (
         <>
           <div style={{ width: '100%', height: 200 }}>
@@ -68,7 +101,7 @@ export function TransactionsCard({
             </ResponsiveContainer>
           </div>
           <ul className="text-sm mt-4 space-y-1 max-h-48 overflow-auto">
-            {transactions.slice(0, 10).map((transaction) => {
+            {transactions.map((transaction) => {
               const currencyData = formatCurrencyWithSign(transaction.amount)
               return (
                 <li
@@ -95,12 +128,36 @@ export function TransactionsCard({
                 </li>
               )
             })}
-            {transactions.length > 10 && (
-              <li className="text-center text-slate-400 text-xs pt-2">
-                +{transactions.length - 10} transações adicionais
-              </li>
-            )}
           </ul>
+          <div className="flex flex-col gap-2 mt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs text-slate-400">
+              Página {Math.min(safePage, Math.max(totalPages, 1))} de{' '}
+              {Math.max(totalPages, 1)} · Mostrando{' '}
+              {displayStart} - {displayEnd} de {totalCount}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <LiquidButton
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  onPageChange(safePage - 1)
+                }}
+                disabled={loading || !hasPreviousPage}
+              >
+                Anterior
+              </LiquidButton>
+              <LiquidButton
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  onPageChange(safePage + 1)
+                }}
+                disabled={loading || !hasNextPage}
+              >
+                Próximo
+              </LiquidButton>
+            </div>
+          </div>
         </>
       )}
     </LiquidCard>

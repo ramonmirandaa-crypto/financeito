@@ -15,6 +15,20 @@ export interface NormalizedTransaction {
   providerCategoryName?: string
 }
 
+export interface TransactionsPageMeta {
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+export interface PaginatedTransactionsResponse {
+  data: NormalizedTransaction[]
+  meta?: Partial<TransactionsPageMeta>
+}
+
 export const parseDateValue = (value: unknown): string => {
   if (!value) {
     return new Date().toISOString()
