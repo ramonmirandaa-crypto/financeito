@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
-import { LoanForm } from '@/components/forms/loan-form'
+import { LoanForm, type LoanFormData } from '@/components/forms/loan-form'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
 
@@ -67,16 +67,16 @@ export default function LoansPage() {
     createItem: createLoan,
     updateItem: updateLoan,
     deleteItem: deleteLoan
-  } = useResourceCrud<Loan, Loan, Loan>({
+  } = useResourceCrud<Loan, LoanFormData, LoanFormData>({
     baseUrl: '/api/loans',
     messages: loanMessages
   })
 
-  const handleCreateLoan = async (loanData: Loan) => {
+  const handleCreateLoan = async (loanData: LoanFormData) => {
     await createLoan(loanData)
   }
 
-  const handleEditLoan = async (loanData: Loan) => {
+  const handleEditLoan = async (loanData: LoanFormData) => {
     if (!editingLoan?.id) return
     await updateLoan(editingLoan.id, loanData)
   }

@@ -6,7 +6,7 @@ import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { LiquidInput } from '@/components/ui/liquid-input'
 
-interface Goal {
+export interface GoalFormData {
   id?: string
   title: string
   description?: string
@@ -16,17 +16,18 @@ interface Goal {
   targetDate: string
   category?: string
   priority: string
+  isCompleted?: boolean
 }
 
 interface GoalFormProps {
-  goal?: Goal
-  onSubmit: (goal: Goal) => Promise<void>
+  goal?: GoalFormData
+  onSubmit: (goal: GoalFormData) => Promise<void>
   onCancel: () => void
   loading?: boolean
 }
 
 export function GoalForm({ goal, onSubmit, onCancel, loading }: GoalFormProps) {
-  const [formData, setFormData] = useState<Goal>({
+  const [formData, setFormData] = useState<GoalFormData>({
     title: goal?.title || '',
     description: goal?.description || '',
     targetAmount: goal?.targetAmount || 0,
@@ -34,7 +35,8 @@ export function GoalForm({ goal, onSubmit, onCancel, loading }: GoalFormProps) {
     currency: goal?.currency || 'BRL',
     targetDate: goal?.targetDate ? new Date(goal.targetDate).toISOString().split('T')[0] : '',
     category: goal?.category || '',
-    priority: goal?.priority || 'medium'
+    priority: goal?.priority || 'medium',
+    isCompleted: goal?.isCompleted || false
   })
 
   const [submitting, setSubmitting] = useState(false)

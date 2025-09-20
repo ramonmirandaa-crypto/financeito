@@ -6,7 +6,7 @@ import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { LiquidInput } from '@/components/ui/liquid-input'
 
-interface Subscription {
+export interface SubscriptionFormData {
   id?: string
   name: string
   description?: string
@@ -16,17 +16,18 @@ interface Subscription {
   nextBilling: string
   category?: string
   autoRenew: boolean
+  isActive?: boolean
 }
 
 interface SubscriptionFormProps {
-  subscription?: Subscription
-  onSubmit: (subscription: Subscription) => Promise<void>
+  subscription?: SubscriptionFormData
+  onSubmit: (subscription: SubscriptionFormData) => Promise<void>
   onCancel: () => void
   loading?: boolean
 }
 
 export function SubscriptionForm({ subscription, onSubmit, onCancel, loading }: SubscriptionFormProps) {
-  const [formData, setFormData] = useState<Subscription>({
+  const [formData, setFormData] = useState<SubscriptionFormData>({
     name: subscription?.name || '',
     description: subscription?.description || '',
     amount: subscription?.amount || 0,
@@ -34,7 +35,8 @@ export function SubscriptionForm({ subscription, onSubmit, onCancel, loading }: 
     billingCycle: subscription?.billingCycle || 'monthly',
     nextBilling: subscription?.nextBilling ? new Date(subscription.nextBilling).toISOString().split('T')[0] : '',
     category: subscription?.category || '',
-    autoRenew: subscription?.autoRenew ?? true
+    autoRenew: subscription?.autoRenew ?? true,
+    isActive: subscription?.isActive ?? true
   })
 
   const [submitting, setSubmitting] = useState(false)

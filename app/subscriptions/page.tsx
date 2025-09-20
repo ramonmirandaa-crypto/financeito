@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
-import { SubscriptionForm } from '@/components/forms/subscription-form'
+import { SubscriptionForm, type SubscriptionFormData } from '@/components/forms/subscription-form'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { ResourceMessages, useResourceCrud } from '@/hooks/useResourceCrud'
 
@@ -64,16 +64,16 @@ export default function SubscriptionsPage() {
     createItem: createSubscription,
     updateItem: updateSubscription,
     deleteItem: deleteSubscription
-  } = useResourceCrud<Subscription, Subscription, Subscription>({
+  } = useResourceCrud<Subscription, SubscriptionFormData, SubscriptionFormData>({
     baseUrl: '/api/subscriptions',
     messages: subscriptionMessages
   })
 
-  const handleCreateSubscription = async (subscriptionData: Subscription) => {
+  const handleCreateSubscription = async (subscriptionData: SubscriptionFormData) => {
     await createSubscription(subscriptionData)
   }
 
-  const handleEditSubscription = async (subscriptionData: Subscription) => {
+  const handleEditSubscription = async (subscriptionData: SubscriptionFormData) => {
     if (!editingSubscription?.id) return
     await updateSubscription(editingSubscription.id, subscriptionData)
   }
