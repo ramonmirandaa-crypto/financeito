@@ -38,7 +38,9 @@
    - `financeito/db`
    - `financeito/tls`
    - `financeito/backups`
-   Os dados do PostgreSQL serão armazenados em `/mnt/dados/financeito/db` e os backups em `/mnt/dados/financeito/backups`.
+   Os dados do PostgreSQL e os backups serão armazenados nos caminhos configurados pelas variáveis `DB_DATA_PATH` e `BACKUP_PATH`.
+   Por padrão, o `docker-compose.yml` usa `./.docker/db-data` e `./.docker/backups`, mas para o cenário com TrueNAS defina no `.env`
+   `DB_DATA_PATH=/mnt/dados/financeito/db` e `BACKUP_PATH=/mnt/dados/financeito/backups` para usar os datasets criados acima.
 2. Use o botão **Shell** no topo da interface para abrir um terminal no host.
 
 ## 4) Clonar o projeto no TrueNAS (Shell)
@@ -62,6 +64,8 @@ cp .env.example .env
 nano .env
 ```
 No arquivo `.env`, defina `ENCRYPTION_KEY_BASE64` com uma chave de 32 bytes codificada em Base64 para criptografia dos dados sensíveis.
+Se quiser armazenar os dados do PostgreSQL ou os backups em outro local (por exemplo, em um volume dedicado da infraestrutura),
+ajuste as variáveis `DB_DATA_PATH` e `BACKUP_PATH` para o caminho desejado antes de subir os contêineres.
 Sem uma chave válida, as rotas de sincronização responderão com `503` exibindo o erro `ENCRYPTION_KEY_BASE64 ausente ou inválido. Configure uma chave Base64 de 32 bytes (256 bits) para habilitar a criptografia.`
 
 ### Variáveis Pluggy
@@ -100,7 +104,7 @@ docker compose logs backup
   ```bash
   docker compose up -d backup && docker compose exec backup sh /app/scripts/backup.sh
   ```
-  O arquivo gerado é salvo em `/mnt/dados/financeito/backups` e enviado ao Google Drive, sendo mantido por `BACKUP_RETENTION_DAYS`. Caso queira sobrescrever este valor em uma execução específica do `gdrive-upload.js`, use `--retention N`.
+  O arquivo gerado é salvo no diretório apontado por `BACKUP_PATH` (padrão `./.docker/backups`) e enviado ao Google Drive, sendo mantido por `BACKUP_RETENTION_DAYS`. Caso queira sobrescrever este valor em uma execução específica do `gdrive-upload.js`, use `--retention N`.
 - **Exportar tabelas em JSON/CSV**
   ```bash
   docker compose exec backup node /app/scripts/gdrive-upload.js --export-json /backups/json --skip-upload
@@ -112,7 +116,7 @@ docker compose logs backup
   ```
   O upload só ocorre quando `--skip-upload` não é utilizado.
 - **Restauração**
-  Baixe um `.tar.gz` do Drive para `/mnt/dados/financeito/backups` e execute:
+  Baixe um `.tar.gz` do Drive para o diretório configurado em `BACKUP_PATH` e execute:
   ```bash
   docker compose exec backup sh /app/scripts/restore.sh /backups/NOME_DO_ARQUIVO.tar.gz
   ```

@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - /mnt/dados/financeito/db:/var/lib/postgresql/data
+      - ${DB_DATA_PATH:-./.docker/db-data}:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s
@@ -39,4 +39,4 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - /mnt/dados/financeito/backups:/backups
+      - ${BACKUP_PATH:-./.docker/backups}:/backups
