@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 const routes = [
-  { modulePath: '@/app/profile/page', title: 'Meu Perfil | Financeito' },
-  { modulePath: '@/app/settings/page', title: 'Configurações | Financeito' },
-  { modulePath: '@/app/security/page', title: 'Segurança | Financeito' },
-  { modulePath: '@/app/billing/page', title: 'Planos e Cobrança | Financeito' },
-  { modulePath: '@/app/notifications/page', title: 'Notificações | Financeito' },
-  { modulePath: '@/app/help/page', title: 'Ajuda e Suporte | Financeito' },
+  { modulePath: '@/app/(app)/profile/page', title: 'Meu Perfil | Financeito' },
+  { modulePath: '@/app/(app)/settings/page', title: 'Configurações | Financeito' },
+  { modulePath: '@/app/(app)/security/page', title: 'Segurança | Financeito' },
+  { modulePath: '@/app/(app)/billing/page', title: 'Planos e Cobrança | Financeito' },
+  { modulePath: '@/app/(app)/notifications/page', title: 'Notificações | Financeito' },
+  { modulePath: '@/app/(app)/help/page', title: 'Ajuda e Suporte | Financeito' },
 ] as const
 
 describe('user dropdown routes', () => {
