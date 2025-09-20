@@ -9,7 +9,7 @@ import { Headset, Moon, Settings as SettingsIcon, Sun, User as UserIcon } from '
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from '@/lib/toast'
 
 interface MenuAction {
   id: string
@@ -34,7 +34,6 @@ export default function FloatingProfileMenu() {
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth()
   const { user, isLoaded: isUserLoaded } = useUser()
   const { theme, toggleTheme } = useTheme()
-  const { toast } = useToast()
   const router = useRouter()
 
   const [isOpen, setIsOpen] = useState(false)
@@ -165,7 +164,7 @@ export default function FloatingProfileMenu() {
       router.push(path)
       closeMenu()
     },
-    [closeMenu, router, toast]
+    [closeMenu, router]
   )
 
   const handleThemeToggle = useCallback(() => {
@@ -173,7 +172,7 @@ export default function FloatingProfileMenu() {
     toggleTheme()
     toast.success('Tema alterado', `Tema ${nextTheme === 'dark' ? 'escuro' : 'claro'} ativado.`)
     closeMenu()
-  }, [closeMenu, theme, toggleTheme, toast])
+  }, [closeMenu, theme, toggleTheme])
 
   const menuActions: MenuAction[] = useMemo(
     () => [

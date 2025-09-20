@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useToast } from './use-toast'
+import { toast } from '@/lib/toast'
 
 type CrudOperation = 'fetch' | 'create' | 'update' | 'delete'
 
@@ -126,7 +126,6 @@ export function useResourceCrud<TResource, TCreate = Partial<TResource>, TUpdate
     prependNewItems = true
   } = options
 
-  const { toast } = useToast()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -196,7 +195,7 @@ export function useResourceCrud<TResource, TCreate = Partial<TResource>, TUpdate
   const defaultOnUnauthorized = useCallback(() => {
     toast.error('Sessão expirada', 'Faça login novamente para continuar.')
     router.push('/login')
-  }, [router, toast])
+  }, [router])
 
   const getOperationMessages = useCallback((operation: CrudOperation) => messagesRef.current?.[operation], [])
 
@@ -304,7 +303,7 @@ export function useResourceCrud<TResource, TCreate = Partial<TResource>, TUpdate
     } finally {
       setLoading(false)
     }
-  }, [applyListTransform, baseUrl, getOperationMessages, handleUnauthorized, toast])
+  }, [applyListTransform, baseUrl, getOperationMessages, handleUnauthorized])
 
   useEffect(() => {
     loadItems()
@@ -374,7 +373,7 @@ export function useResourceCrud<TResource, TCreate = Partial<TResource>, TUpdate
         setIsSubmitting(false)
       }
     },
-    [applyItemTransform, baseUrl, getOperationMessages, handleUnauthorized, prependNewItems, toast]
+    [applyItemTransform, baseUrl, getOperationMessages, handleUnauthorized, prependNewItems]
   )
 
   const updateItem = useCallback(
@@ -425,7 +424,7 @@ export function useResourceCrud<TResource, TCreate = Partial<TResource>, TUpdate
         setIsSubmitting(false)
       }
     },
-    [applyItemTransform, baseUrl, getId, getOperationMessages, handleUnauthorized, toast]
+    [applyItemTransform, baseUrl, getId, getOperationMessages, handleUnauthorized]
   )
 
   const deleteItem = useCallback(
@@ -470,7 +469,7 @@ export function useResourceCrud<TResource, TCreate = Partial<TResource>, TUpdate
         setDeletingItemId(null)
       }
     },
-    [baseUrl, getId, getOperationMessages, handleUnauthorized, toast]
+    [baseUrl, getId, getOperationMessages, handleUnauthorized]
   )
 
   const reload = useCallback(async () => {

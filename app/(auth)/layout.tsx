@@ -4,8 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import ThemeToggle from '@/components/theme-toggle'
 import ThemeScript from '@/components/theme-script'
 import { ThemeProvider } from '@/contexts/theme-context'
-import { ToastProvider } from '@/contexts/toast-context'
-import { ToastContainer } from '@/components/ui/toast'
+import { ToastRoot } from '@/components/toast-root'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,11 +17,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} min-h-screen flex items-center justify-center`}>
         <ClerkProvider>
           <ThemeProvider>
-            <ToastProvider>
-              <ThemeToggle className="fixed top-6 right-6 z-50" />
-              {children}
-              <ToastContainer />
-            </ToastProvider>
+            <ThemeToggle className="fixed top-6 right-6 z-50" />
+            {children}
+            <ToastRoot />
           </ThemeProvider>
         </ClerkProvider>
       </body>

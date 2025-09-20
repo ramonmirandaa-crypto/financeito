@@ -15,14 +15,12 @@
 ```
 components/ui/liquid-button.tsx          # Novo componente liquid glass
 components/ui/fluid-menu.tsx             # Menu fluido vertical
-components/ui/toast.tsx                  # Sistema de notificações
+components/toast-root.tsx                # Sistema de notificações
 components/fluid-sidebar.tsx             # Sidebar atualizada
 ```
 
 ### **Sistema de Estado**
 ```
-contexts/toast-context.tsx               # Context para toasts
-hooks/use-toast.ts                       # Hook personalizado
 app/providers.tsx                        # Providers atualizados
 ```
 
@@ -69,10 +67,9 @@ git status
 git add \
   components/ui/liquid-button.tsx \
   components/ui/fluid-menu.tsx \
-  components/ui/toast.tsx \
+  components/toast-root.tsx \
   components/fluid-sidebar.tsx \
-  contexts/toast-context.tsx \
-  hooks/use-toast.ts \
+  lib/toast.tsx \
   app/providers.tsx \
   app/dashboard/page.tsx \
   app/budget/page.tsx \
@@ -118,7 +115,7 @@ git commit -m "feat: Modernização completa UI/UX v2.0
 
 BREAKING CHANGES:
 - Nova estrutura de componentes UI
-- ToastProvider obrigatório na raiz da app
+- ToastRoot (react-toastify) montado na raiz da app
 - Formatação de dados alterada para pt-BR"
 
 # Push para origem

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
-import { useToast } from '@/hooks/use-toast'
 import { createHandleConnect } from '@/lib/pluggy-connect'
+import { toast } from '@/lib/toast'
 import {
   normalizeTransaction,
   toTransactionFormData,
@@ -106,8 +106,6 @@ export const useDashboardData = () => {
 
   const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
-  const { toast } = useToast()
-
   const loadTransactions = useCallback(
     async ({
       page = transactionPage,
@@ -180,7 +178,7 @@ export const useDashboardData = () => {
         }
       }
     },
-    [transactionPage, toast],
+    [transactionPage],
   )
 
   const loadData = useCallback(
@@ -242,7 +240,7 @@ export const useDashboardData = () => {
         }
       }
     },
-    [toast, transactionPage, loadTransactions],
+    [transactionPage, loadTransactions],
   )
 
   const handleTransactionsPageChange = useCallback(
@@ -343,7 +341,7 @@ export const useDashboardData = () => {
         setLoadingTransactionForm(false)
       }
     },
-    [transactions, toast, closeTransactionModal],
+    [transactions, closeTransactionModal],
   )
 
   const handleSubmitTransaction = useCallback(
@@ -458,7 +456,7 @@ export const useDashboardData = () => {
         setSavingTransaction(false)
       }
     },
-    [selectedTransactionId, transactions, toast, closeTransactionModal, loadData],
+    [selectedTransactionId, transactions, closeTransactionModal, loadData],
   )
 
   const handleDeleteTransaction = useCallback(
@@ -571,14 +569,7 @@ export const useDashboardData = () => {
         return false
       }
     },
-    [
-      transactions,
-      transactionsMeta,
-      transactionPage,
-      toast,
-      loadData,
-      closeTransactionModal,
-    ],
+    [transactions, transactionsMeta, transactionPage, loadData, closeTransactionModal],
   )
 
   const manualAccountOptions = useMemo<ManualAccountOption[]>(
@@ -657,7 +648,7 @@ export const useDashboardData = () => {
         setSavingManualAccount(false)
       }
     },
-    [toast, closeManualAccountModal, loadData],
+    [closeManualAccountModal, loadData],
   )
 
   const balanceData = useMemo(
@@ -749,7 +740,7 @@ export const useDashboardData = () => {
         toast,
         onAfterSync: loadData,
       }),
-    [toast, loadData],
+    [loadData],
   )
 
   const quickActions = useMemo<QuickAction[]>(
