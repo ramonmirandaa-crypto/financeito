@@ -24,11 +24,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
     }
 
-    let interestRateNumber: number | undefined
-    if (data.interestRate !== undefined) {
-      interestRateNumber = Number(data.interestRate)
-      if (Number.isNaN(interestRateNumber)) {
-        return NextResponse.json({ error: 'Campo interestRate inválido' }, { status: 400 })
+    let interestRateValue: number | null | undefined
+    if (Object.prototype.hasOwnProperty.call(data, 'interestRate')) {
+      if (data.interestRate === null || `${data.interestRate}`.trim() === '') {
+        interestRateValue = null
+      } else {
+        const parsedInterestRate = Number(data.interestRate)
+        if (Number.isNaN(parsedInterestRate)) {
+          return NextResponse.json({ error: 'Campo interestRate inválido' }, { status: 400 })
+        }
+        interestRateValue = parsedInterestRate
       }
     }
 
@@ -87,9 +92,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'interestRate')) {
-      if (data.interestRate !== undefined) {
-        updateData.interestRate = interestRateNumber
-      }
+      updateData.interestRate = interestRateValue
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'installmentCount')) {
@@ -97,10 +100,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'dueDate')) {
-      if (data.dueDate) {
-        updateData.dueDate = new Date(data.dueDate)
-      } else if (data.dueDate === null) {
+      if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
         updateData.dueDate = null
+      } else if (data.dueDate) {
+        updateData.dueDate = new Date(data.dueDate)
       }
     }
 
