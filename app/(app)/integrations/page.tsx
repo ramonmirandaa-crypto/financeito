@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from '@/lib/toast'
 import { createHandleConnect } from '@/lib/pluggy-connect'
 import { formatCurrency, formatDateTime } from '@/lib/format-utils'
 import {
@@ -47,7 +47,6 @@ export default function IntegrationsPage() {
     useState<ManualAccountFormData | null>(null)
   const [savingManualAccount, setSavingManualAccount] = useState(false)
   const [deletingManualAccountId, setDeletingManualAccountId] = useState<string | null>(null)
-  const { toast } = useToast()
 
   const loadAccounts = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (silent) {
@@ -136,7 +135,7 @@ export default function IntegrationsPage() {
         setLoading(false)
       }
     }
-  }, [toast])
+  }, [])
 
   useEffect(() => {
     loadAccounts()
@@ -156,7 +155,7 @@ export default function IntegrationsPage() {
 
   const handleConnect = useMemo(
     () => createHandleConnect({ toast, onAfterSync: () => loadAccounts({ silent: true }) }),
-    [toast, loadAccounts]
+    [loadAccounts]
   )
 
   const handleDisconnect = useCallback(
@@ -193,7 +192,7 @@ export default function IntegrationsPage() {
         setDisconnectingId(null)
       }
     },
-    [toast, loadAccounts]
+    [loadAccounts]
   )
 
   const handleOpenManualAccountModal = useCallback(

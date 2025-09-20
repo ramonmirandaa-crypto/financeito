@@ -1,14 +1,4 @@
-export type ToastMethod = (
-  title: string,
-  message?: string,
-  options?: { duration?: number; dismissible?: boolean }
-) => void
-
-export interface ToastLike {
-  success: ToastMethod
-  error: ToastMethod
-  warning: ToastMethod
-}
+import type { ToastLike } from './toast'
 
 interface CreateHandleConnectOptions {
   toast: ToastLike

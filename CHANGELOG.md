@@ -20,12 +20,11 @@ Esta versão traz uma **modernização completa** do Financeito com:
 ### **📱 Componentes de Interface**
 - `components/ui/liquid-button.tsx` - Botão liquid glass com animações
 - `components/ui/fluid-menu.tsx` - Menu fluido vertical estilo 21st.dev
-- `components/ui/toast.tsx` - Sistema de notificações visuais
+- `components/toast-root.tsx` - Sistema de notificações integrado ao tema
 - `components/fluid-sidebar.tsx` - Sidebar com menu fluido integrado
 
 ### **🧠 Sistema de Estado e Contextos**
-- `contexts/toast-context.tsx` - Context provider para toasts globais
-- `hooks/use-toast.ts` - Hook personalizado para toasts
+- `lib/toast.tsx` - Helpers de toasts baseados em react-toastify
 - `app/providers.tsx` - Provider principal da aplicação
 
 ### **🌐 Páginas e APIs**
@@ -110,17 +109,20 @@ Esta versão traz uma **modernização completa** do Financeito com:
 ## 🔔 **Sistema de Notificações**
 
 ### **Toast Notifications**
-- **Context global** para uso em toda aplicação
+- **Baseado em `react-toastify`** para robustez e acessibilidade
+- **Helpers centralizados** em `lib/toast.tsx`
 - **4 tipos**: `success`, `error`, `warning`, `info`
-- **Auto-dismiss** configurável (padrão 5s)
-- **Animações Framer Motion** suaves
-- **Posicionamento fixo** no canto superior direito
+- **Auto-dismiss** configurável via `duration`
 - **Estilo liquid glass** consistente com o tema
+- **Container compartilhado** em `components/toast-root.tsx`
 
 ### **Uso Simples**
 ```typescript
-const { showToast } = useToast()
-showToast('Operação realizada com sucesso!', 'success')
+import { toast } from '@/lib/toast'
+
+toast.success('Operação realizada com sucesso!', 'Dados sincronizados com sucesso!', {
+  duration: 4000,
+})
 ```
 
 ---
