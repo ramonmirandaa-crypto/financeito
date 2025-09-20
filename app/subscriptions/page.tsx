@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
@@ -48,7 +49,7 @@ const subscriptionMessages: ResourceMessages = {
   }
 }
 
-export default function SubscriptionsPage() {
+function SubscriptionsPageContent() {
   const {
     items: subscriptions,
     loading,
@@ -401,5 +402,22 @@ export default function SubscriptionsPage() {
         onConfirm={() => deletingSubscription && handleDeleteSubscription(deletingSubscription)}
       />
     </div>
+  )
+}
+
+export default function SubscriptionsPage() {
+  return (
+    <Suspense
+      fallback={(
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+            <p className="mt-2 text-slate-400">Carregando assinaturas...</p>
+          </div>
+        </div>
+      )}
+    >
+      <SubscriptionsPageContent />
+    </Suspense>
   )
 }
