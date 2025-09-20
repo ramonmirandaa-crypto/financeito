@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
@@ -51,7 +52,7 @@ const loanMessages: ResourceMessages = {
   }
 }
 
-export default function LoansPage() {
+function LoansPageContent() {
   const {
     items: loans,
     loading,
@@ -414,5 +415,22 @@ export default function LoansPage() {
         onConfirm={() => deletingLoan && handleDeleteLoan(deletingLoan)}
       />
     </div>
+  )
+}
+
+export default function LoansPage() {
+  return (
+    <Suspense
+      fallback={(
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+            <p className="mt-2 text-slate-400">Carregando empréstimos...</p>
+          </div>
+        </div>
+      )}
+    >
+      <LoansPageContent />
+    </Suspense>
   )
 }
