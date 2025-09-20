@@ -87,6 +87,12 @@ docker compose up -d --build db web backup
 ```
 O contêiner `web` executa `./node_modules/.bin/prisma migrate deploy` automaticamente ao iniciar.
 
+> ℹ️ O build da imagem do Next.js precisa do `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. O `docker compose` já encaminha automaticamente o valor definido no `.env`. Caso faça um `docker build` manual, lembre-se de informar o argumento:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" -t financeito-web .
+```
+
 ## 8) Proxy externo (Nginx/Cloudflare)
 - No `.env`, `PUBLIC_BASE_URL` deve usar `https://`.
 - A variável `DOMAIN` foi removida; use apenas `PUBLIC_BASE_URL` para definir o domínio público.
