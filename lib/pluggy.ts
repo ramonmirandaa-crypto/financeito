@@ -43,14 +43,20 @@ async function authHeaders() {
   return { 'X-API-KEY': apiKey }
 }
 
+function normalizeConnectTokenResponse<T extends Record<string, any>>(data: T) {
+  const connectToken =
+    data.connectToken ?? data.connect_token ?? data.linkToken ?? data.link_token ?? data.token
+  return { ...data, connectToken }
+}
+
 export async function createConnectToken(payload?: Record<string, any>) {
   const headers = await authHeaders()
   try {
     const { data } = await axios.post(`${BASE_URL}/connect_token`, payload || {}, { headers })
-    return data
+    return normalizeConnectTokenResponse(data)
   } catch {
     const { data } = await axios.post(`${BASE_URL}/link/token`, payload || {}, { headers })
-    return data
+    return normalizeConnectTokenResponse(data)
   }
 }
 

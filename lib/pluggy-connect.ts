@@ -39,7 +39,8 @@ export function createHandleConnect({ toast, onAfterSync }: CreateHandleConnectO
       }
 
       const json = await response.json()
-      const connectToken = json.connectToken || json.linkToken
+      const connectToken =
+        json.connectToken ?? json.connect_token ?? json.linkToken ?? json.link_token
 
       if (!connectToken) {
         toast.error(
