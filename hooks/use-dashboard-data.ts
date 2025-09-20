@@ -9,6 +9,8 @@ import {
   normalizeTransaction,
   toTransactionFormData,
   type NormalizedTransaction,
+  type PaginatedTransactionsResponse,
+  type TransactionsPageMeta,
 } from '@/lib/transactions'
 import type {
   ManualAccountOption,
@@ -30,6 +32,8 @@ export interface UpcomingPayment {
   date: string
   amount: number
 }
+
+const DEFAULT_TRANSACTIONS_PAGE_SIZE = 10
 
 const getLoanName = (loan: any) => {
   const title = typeof loan.title === 'string' ? loan.title.trim() : ''
@@ -71,11 +75,21 @@ export const buildUpcomingPayments = (
 
 interface LoadDataOptions {
   silent?: boolean
+  page?: number
+}
+
+interface LoadTransactionsOptions {
+  page?: number
+  pageSize?: number
+  silent?: boolean
 }
 
 export const useDashboardData = () => {
   const [accounts, setAccounts] = useState<any[]>([])
   const [transactions, setTransactions] = useState<NormalizedTransaction[]>([])
+  const [transactionsMeta, setTransactionsMeta] =
+    useState<TransactionsPageMeta | null>(null)
+  const [transactionPage, setTransactionPage] = useState(1)
   const [budgets, setBudgets] = useState<any[]>([])
   const [goals, setGoals] = useState<any[]>([])
   const [subscriptions, setSubscriptions] = useState<any[]>([])
@@ -90,13 +104,89 @@ export const useDashboardData = () => {
   const [savingTransaction, setSavingTransaction] = useState(false)
   const [manualAccountModalOpen, setManualAccountModalOpen] = useState(false)
   const [savingManualAccount, setSavingManualAccount] = useState(false)
+  const [loadingTransactions, setLoadingTransactions] = useState(false)
 
   const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
   const { toast } = useToast()
 
+  const loadTransactions = useCallback(
+    async ({
+      page = transactionPage,
+      pageSize = DEFAULT_TRANSACTIONS_PAGE_SIZE,
+      silent = false,
+    }: LoadTransactionsOptions = {}) => {
+      const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
+      const safePageSize =
+        Number.isFinite(pageSize) && pageSize > 0
+          ? Math.floor(pageSize)
+          : DEFAULT_TRANSACTIONS_PAGE_SIZE
+
+      if (!silent) {
+        setLoadingTransactions(true)
+      }
+
+      try {
+        const params = new URLSearchParams({
+          page: String(safePage),
+          pageSize: String(safePageSize),
+        })
+        const response = await fetch(`/api/transactions?${params.toString()}`)
+
+        if (response.status === 401) {
+          window.location.href = '/login'
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to load transactions')
+        }
+
+        const json: PaginatedTransactionsResponse = await response.json()
+        const normalizedTransactions = (json.data || []).map((transaction: any) =>
+          normalizeTransaction(transaction),
+        )
+
+        setTransactions(normalizedTransactions)
+
+        const totalCount = json.meta?.totalCount ?? normalizedTransactions.length
+        const pageSizeValue = json.meta?.pageSize ?? safePageSize
+        const computedTotalPages =
+          pageSizeValue > 0 ? Math.ceil(totalCount / pageSizeValue) : 0
+        const pageValue = json.meta?.page ?? safePage
+
+        const resolvedMeta: TransactionsPageMeta = {
+          page: pageValue,
+          pageSize: pageSizeValue,
+          totalCount,
+          totalPages: json.meta?.totalPages ?? computedTotalPages,
+          hasNextPage:
+            json.meta?.hasNextPage ??
+            (pageValue < (json.meta?.totalPages ?? computedTotalPages)),
+          hasPreviousPage:
+            json.meta?.hasPreviousPage ?? pageValue > 1,
+        }
+
+        setTransactionsMeta(resolvedMeta)
+        setTransactionPage(resolvedMeta.page)
+      } catch (error) {
+        console.error('Erro ao carregar transações:', error)
+        toast.error(
+          'Erro ao carregar transações',
+          'Não foi possível carregar suas transações. Tente novamente.',
+          { duration: 5000 },
+        )
+      } finally {
+        if (!silent) {
+          setLoadingTransactions(false)
+        }
+      }
+    },
+    [transactionPage, toast],
+  )
+
   const loadData = useCallback(
-    async ({ silent = false }: LoadDataOptions = {}) => {
+    async ({ silent = false, page }: LoadDataOptions = {}) => {
       if (!silent) {
         setLoading(true)
       }
@@ -116,11 +206,6 @@ export const useDashboardData = () => {
               ...account,
               balance: Number(account.balance),
             })),
-          )
-          setTransactions(
-            (json.transactions || []).map((transaction: any) =>
-              normalizeTransaction(transaction),
-            ),
           )
         }
 
@@ -143,6 +228,9 @@ export const useDashboardData = () => {
         if (loansRes.ok) {
           setLoans(await loansRes.json())
         }
+
+        const targetPage = page ?? transactionPage
+        await loadTransactions({ page: targetPage, silent })
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
         toast.error(
@@ -156,7 +244,27 @@ export const useDashboardData = () => {
         }
       }
     },
-    [toast],
+    [toast, transactionPage, loadTransactions],
+  )
+
+  const handleTransactionsPageChange = useCallback(
+    (nextPage: number) => {
+      if (loadingTransactions) {
+        return
+      }
+
+      if (nextPage < 1) {
+        return
+      }
+
+      const totalPages = transactionsMeta?.totalPages ?? 0
+      if (totalPages > 0 && nextPage > totalPages) {
+        return
+      }
+
+      return loadTransactions({ page: nextPage })
+    },
+    [transactionsMeta, loadTransactions, loadingTransactions],
   )
 
   useEffect(() => {
@@ -339,7 +447,7 @@ export const useDashboardData = () => {
         )
 
         closeTransactionModal()
-        await loadData({ silent: true })
+        await loadData({ silent: true, page: 1 })
       } catch (error) {
         console.error('Erro ao salvar transação:', error)
         toast.error(
@@ -589,14 +697,21 @@ export const useDashboardData = () => {
     [subscriptions, loans],
   )
 
+  const currentTransactionsPageSize =
+    transactionsMeta?.pageSize ?? DEFAULT_TRANSACTIONS_PAGE_SIZE
+
   return {
     accounts,
     transactions,
+    transactionsMeta,
+    transactionPage,
+    transactionsPageSize: currentTransactionsPageSize,
     budgets,
     goals,
     subscriptions,
     loans,
     loading,
+    loadingTransactions,
     quickActions,
     quickAccessItems,
     connectDisabled,
@@ -624,6 +739,7 @@ export const useDashboardData = () => {
     handleSubmitManualAccount,
     handleConnect,
     loadData,
+    handleTransactionsPageChange,
   }
 }
 
