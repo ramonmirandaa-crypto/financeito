@@ -24,12 +24,50 @@ import {
   isUpcoming,
 } from '@/lib/format-utils'
 
-interface UpcomingPayment {
+export interface UpcomingPayment {
   type: string
   name: string
   date: string
   amount: number
 }
+
+const getLoanName = (loan: any) => {
+  const title = typeof loan.title === 'string' ? loan.title.trim() : ''
+  if (title) return title
+
+  const description =
+    typeof loan.description === 'string' ? loan.description.trim() : ''
+  if (description) return description
+
+  return 'Empréstimo'
+}
+
+export const buildUpcomingPayments = (
+  subscriptions: any[],
+  loans: any[],
+): UpcomingPayment[] =>
+  [
+    ...subscriptions
+      .filter(
+        (subscription) =>
+          subscription.nextBilling &&
+          isUpcoming(subscription.nextBilling, 7),
+      )
+      .map((subscription) => ({
+        type: 'Assinatura',
+        name: subscription.name,
+        date: subscription.nextBilling,
+        amount: subscription.amount,
+      })),
+    ...loans
+      .filter((loan) => loan.dueDate && isUpcoming(loan.dueDate, 7) && !loan.isPaid)
+      .map((loan) => ({
+        type: 'Empréstimo',
+        name: getLoanName(loan),
+        date: loan.dueDate,
+        amount: loan.amount,
+      })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
 interface LoadDataOptions {
   silent?: boolean
@@ -547,33 +585,7 @@ export const useDashboardData = () => {
   }, [transactions])
 
   const upcomingPayments = useMemo<UpcomingPayment[]>(
-    () => [
-      ...subscriptions
-        .filter(
-          (subscription) =>
-            subscription.nextBilling &&
-            isUpcoming(subscription.nextBilling, 7),
-        )
-        .map((subscription) => ({
-          type: 'Assinatura',
-          name: subscription.name,
-          date: subscription.nextBilling,
-          amount: subscription.amount,
-        })),
-      ...loans
-        .filter(
-          (loan) =>
-            loan.dueDate &&
-            isUpcoming(loan.dueDate, 7) &&
-            !loan.isPaid,
-        )
-        .map((loan) => ({
-          type: 'Empréstimo',
-          name: loan.description,
-          date: loan.dueDate,
-          amount: loan.amount,
-        })),
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    () => buildUpcomingPayments(subscriptions, loans),
     [subscriptions, loans],
   )
 
