@@ -186,3 +186,48 @@ export async function PUT(
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    await ensureUser(userId)
+
+    const transaction = await prisma.transaction.findFirst({
+      where: { id: params.id, userId },
+      include: { bankAccount: true },
+    })
+
+    if (!transaction) {
+      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (
+        transaction.accountId &&
+        transaction.bankAccount?.provider === 'manual'
+      ) {
+        const adjustment = new Prisma.Decimal(transaction.amount).mul(-1)
+        await tx.bankAccount.update({
+          where: { id: transaction.accountId },
+          data: {
+            balance: { increment: adjustment },
+          },
+        })
+      }
+
+      await tx.transaction.delete({ where: { id: transaction.id } })
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Erro ao excluir transação:', error)
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+  }
+}

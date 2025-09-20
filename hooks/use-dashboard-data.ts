@@ -463,6 +463,126 @@ export const useDashboardData = () => {
     [selectedTransactionId, transactions, toast, closeTransactionModal, loadData],
   )
 
+  const handleDeleteTransaction = useCallback(
+    async (transactionId: string) => {
+      const existingTransaction = transactions.find(
+        (transaction) => transaction.id === transactionId,
+      )
+
+      const currentPage = transactionsMeta?.page ?? transactionPage
+      const pageSize = transactionsMeta?.pageSize ?? DEFAULT_TRANSACTIONS_PAGE_SIZE
+      const totalCount = transactionsMeta?.totalCount ?? transactions.length
+      const newTotalCount = Math.max(totalCount - 1, 0)
+      const newTotalPages =
+        pageSize > 0 ? Math.ceil(newTotalCount / pageSize) : 0
+      const nextPage =
+        newTotalPages === 0 ? 1 : Math.min(currentPage, newTotalPages)
+
+      try {
+        const response = await fetch(`/api/transactions/${transactionId}`, {
+          method: 'DELETE',
+        })
+
+        if (response.status === 401) {
+          window.location.href = '/login'
+          return false
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to delete transaction')
+        }
+
+        setTransactions((prev) =>
+          prev.filter((transaction) => transaction.id !== transactionId),
+        )
+
+        setTransactionsMeta((prev) => {
+          if (prev) {
+            const updatedTotalCount = Math.max(prev.totalCount - 1, 0)
+            const totalPages =
+              prev.pageSize > 0
+                ? Math.ceil(updatedTotalCount / prev.pageSize)
+                : 0
+            const pageValue =
+              totalPages === 0 ? 1 : Math.min(prev.page, totalPages)
+
+            return {
+              ...prev,
+              totalCount: updatedTotalCount,
+              totalPages,
+              page: pageValue,
+              hasNextPage: totalPages > 0 ? pageValue < totalPages : false,
+              hasPreviousPage: pageValue > 1,
+            }
+          }
+
+          return {
+            page: nextPage,
+            pageSize,
+            totalCount: newTotalCount,
+            totalPages: newTotalPages,
+            hasNextPage:
+              newTotalPages > 0 ? nextPage < newTotalPages : false,
+            hasPreviousPage: nextPage > 1,
+          }
+        })
+
+        if (existingTransaction?.accountId) {
+          setAccounts((prev) =>
+            prev.map((account) => {
+              if (
+                account.id === existingTransaction.accountId &&
+                account.provider === 'manual'
+              ) {
+                const currentBalance = Number(account.balance ?? 0)
+                return {
+                  ...account,
+                  balance: currentBalance - existingTransaction.amount,
+                }
+              }
+
+              return account
+            }),
+          )
+        }
+
+        setTransactionPage(nextPage)
+        closeTransactionModal()
+
+        toast.success(
+          'Transação removida',
+          'A transação foi excluída com sucesso.',
+        )
+
+        try {
+          await loadData({ silent: true, page: nextPage })
+        } catch (reloadError) {
+          console.error(
+            'Erro ao recarregar dados após excluir transação:',
+            reloadError,
+          )
+        }
+
+        return true
+      } catch (error) {
+        console.error('Erro ao excluir transação:', error)
+        toast.error(
+          'Erro ao excluir transação',
+          'Não foi possível excluir a transação. Tente novamente.',
+        )
+        return false
+      }
+    },
+    [
+      transactions,
+      transactionsMeta,
+      transactionPage,
+      toast,
+      loadData,
+      closeTransactionModal,
+    ],
+  )
+
   const manualAccountOptions = useMemo<ManualAccountOption[]>(
     () =>
       accounts
@@ -727,6 +847,7 @@ export const useDashboardData = () => {
     transactionFormData,
     loadingTransactionForm,
     savingTransaction,
+    handleDeleteTransaction,
     manualAccountOptions,
     manualAccountModalOpen,
     savingManualAccount,

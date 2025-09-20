@@ -38,6 +38,7 @@ export default function Dashboard() {
     transactionFormData,
     loadingTransactionForm,
     savingTransaction,
+    handleDeleteTransaction,
     manualAccountOptions,
     manualAccountModalOpen,
     savingManualAccount,
@@ -100,6 +101,7 @@ export default function Dashboard() {
             hasPreviousPage={Boolean(transactionsMeta?.hasPreviousPage)}
             onPageChange={handleTransactionsPageChange}
             onEdit={handleOpenTransactionModal}
+            onDelete={handleDeleteTransaction}
             onConnect={handleConnect}
             disabled={connectDisabled}
           />
@@ -135,6 +137,7 @@ export default function Dashboard() {
           transaction={transactionFormData ?? undefined}
           onSubmit={handleSubmitTransaction}
           onCancel={closeTransactionModal}
+          onDelete={handleDeleteTransaction}
           loading={loadingTransactionForm}
           submitting={savingTransaction}
           manualAccounts={manualAccountOptions}
