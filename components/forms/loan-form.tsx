@@ -15,8 +15,8 @@ interface Loan {
   lenderName: string
   lenderContact?: string
   type: string
-  interestRate?: number
-  dueDate?: string
+  interestRate?: number | null
+  dueDate?: string | null
   isPaid?: boolean
   installmentCount?: number | null
 }
@@ -53,8 +53,9 @@ export function LoanForm({ loan, onSubmit, onCancel, loading }: LoanFormProps) {
     try {
       const submitData = {
         ...formData,
-        interestRate: formData.interestRate && formData.interestRate > 0 ? formData.interestRate : undefined,
-        dueDate: formData.dueDate || undefined,
+        interestRate:
+          formData.interestRate && formData.interestRate > 0 ? formData.interestRate : null,
+        dueDate: formData.dueDate ? formData.dueDate : null,
         installmentCount: formData.installmentCount ? formData.installmentCount : null
       }
       await onSubmit(submitData)

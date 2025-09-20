@@ -17,10 +17,10 @@ interface Loan {
   lenderName: string
   lenderContact?: string
   type: string // 'lent' ou 'borrowed'
-  interestRate?: number
-  dueDate?: string
+  interestRate?: number | null
+  dueDate?: string | null
   isPaid: boolean
-  paidAt?: string
+  paidAt?: string | null
   installmentCount?: number | null
 }
 

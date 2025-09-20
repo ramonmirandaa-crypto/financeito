@@ -336,6 +336,29 @@ describe('Loan update sanitization', () => {
     expect(typeof body.dueDate).toBe('string')
     expect(typeof body.paidAt).toBe('string')
   })
+
+  it('clears nullable loan fields when provided null values', async () => {
+    const { PATCH } = await import('@/app/api/loans/[id]/route')
+
+    const response = await PATCH(
+      new Request('http://localhost/api/loans/loan_1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interestRate: null,
+          dueDate: null
+        })
+      }) as any,
+      { params: { id: 'loan_1' } }
+    )
+
+    expect(response.status).toBe(200)
+    expect(loanUpdateMock).toHaveBeenCalledTimes(1)
+    expect(loanUpdatePayload).toMatchObject({
+      interestRate: null,
+      dueDate: null
+    })
+  })
 })
 
 describe('Subscription update sanitization', () => {
