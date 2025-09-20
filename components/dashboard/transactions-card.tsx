@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,6 +21,7 @@ import {
 } from '@/lib/format-utils'
 import { chartColors } from '@/lib/theme'
 import type { NormalizedTransaction } from '@/lib/transactions'
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 
 interface TransactionsCardProps {
   loading: boolean
@@ -31,6 +33,7 @@ interface TransactionsCardProps {
   hasPreviousPage: boolean
   onPageChange: (page: number) => void
   onEdit: (transactionId: string) => void
+  onDelete: (transactionId: string) => Promise<boolean>
   onConnect: () => void
   disabled: boolean
 }
@@ -45,9 +48,15 @@ export function TransactionsCard({
   hasPreviousPage,
   onPageChange,
   onEdit,
+  onDelete,
   onConnect,
   disabled,
 }: TransactionsCardProps) {
+  const [confirmingTransactionId, setConfirmingTransactionId] =
+    useState<string | null>(null)
+  const [deletingTransactionId, setDeletingTransactionId] =
+    useState<string | null>(null)
+
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
   const safePageSize =
     Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 1
@@ -64,6 +73,24 @@ export function TransactionsCard({
       : 0
   const displayStart = hasTransactionsOnPage ? startItem : 0
   const displayEnd = hasTransactionsOnPage ? Math.max(endItem, startItem) : 0
+
+  const handleConfirmDelete = async () => {
+    if (!confirmingTransactionId || deletingTransactionId) {
+      return
+    }
+
+    setDeletingTransactionId(confirmingTransactionId)
+    try {
+      const result = await onDelete(confirmingTransactionId)
+      if (result) {
+        setConfirmingTransactionId(null)
+      }
+    } catch (error) {
+      console.error('Erro ao excluir transação na listagem:', error)
+    } finally {
+      setDeletingTransactionId(null)
+    }
+  }
 
   return (
     <LiquidCard>
@@ -124,6 +151,17 @@ export function TransactionsCard({
                     >
                       Editar
                     </LiquidButton>
+                    <LiquidButton
+                      size="sm"
+                      variant="outline"
+                      className="text-xs px-3 py-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
+                      onClick={() => setConfirmingTransactionId(transaction.id)}
+                      disabled={deletingTransactionId === transaction.id}
+                    >
+                      {deletingTransactionId === transaction.id
+                        ? 'Excluindo...'
+                        : 'Excluir'}
+                    </LiquidButton>
                   </div>
                 </li>
               )
@@ -160,6 +198,17 @@ export function TransactionsCard({
           </div>
         </>
       )}
+      <ConfirmDeleteModal
+        isOpen={Boolean(confirmingTransactionId)}
+        message="Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita."
+        onCancel={() => setConfirmingTransactionId(null)}
+        onConfirm={handleConfirmDelete}
+        confirmLabel={
+          deletingTransactionId && confirmingTransactionId === deletingTransactionId
+            ? 'Excluindo...'
+            : 'Excluir'
+        }
+      />
     </LiquidCard>
   )
 }

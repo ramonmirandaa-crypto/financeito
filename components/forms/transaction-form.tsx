@@ -6,6 +6,7 @@ import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { LiquidInput } from '@/components/ui/liquid-input'
 import { formatDateToISODate } from '@/lib/format-utils'
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 
 export interface TransactionFormData {
   id?: string
@@ -20,6 +21,7 @@ interface TransactionFormProps {
   transaction?: TransactionFormData | null
   onSubmit: (transaction: TransactionFormData) => Promise<void> | void
   onCancel: () => void
+  onDelete?: (transactionId: string) => Promise<boolean>
   loading?: boolean
   submitting?: boolean
   manualAccounts: ManualAccountOption[]
@@ -62,6 +64,7 @@ export function TransactionForm({
   transaction,
   onSubmit,
   onCancel,
+  onDelete,
   loading,
   submitting,
   manualAccounts,
@@ -73,8 +76,15 @@ export function TransactionForm({
   const [amountInput, setAmountInput] = useState<string>(() =>
     createInitialAmount(transaction)
   )
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const isEditing = Boolean(formValues.id)
+
+  useEffect(() => {
+    setConfirmDeleteOpen(false)
+    setIsDeleting(false)
+  }, [transaction?.id])
 
   useEffect(() => {
     if (!transaction) {
@@ -143,6 +153,24 @@ export function TransactionForm({
     }
 
     onSubmit(payload)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!onDelete || !formValues.id || isDeleting) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const result = await onDelete(formValues.id)
+      if (result) {
+        setConfirmDeleteOpen(false)
+      }
+    } catch (error) {
+      console.error('Erro ao excluir transação no formulário:', error)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -304,27 +332,57 @@ export function TransactionForm({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <LiquidButton
-                  type="button"
-                  variant="ghost"
-                  onClick={onCancel}
-                  disabled={isSaving}
-                >
-                  Cancelar
-                </LiquidButton>
-                <LiquidButton type="submit" disabled={isSaving}>
-                  {isSaving
-                    ? 'Salvando...'
-                    : isEditing
-                      ? 'Salvar Alterações'
-                      : 'Adicionar Transação'}
-                </LiquidButton>
+              <div
+                className={`flex flex-col gap-3 pt-2 sm:flex-row sm:items-center ${
+                  isEditing && onDelete ? 'sm:justify-between' : 'sm:justify-end'
+                }`}
+              >
+                {isEditing && onDelete && (
+                  <LiquidButton
+                    type="button"
+                    variant="outline"
+                    className="text-sm border-red-500/40 text-red-300 hover:bg-red-500/10 sm:w-auto w-full"
+                    onClick={() => setConfirmDeleteOpen(true)}
+                    disabled={isSaving || isDeleting}
+                  >
+                    {isDeleting ? 'Excluindo...' : 'Excluir Transação'}
+                  </LiquidButton>
+                )}
+                <div className="flex justify-end gap-3 sm:justify-end sm:w-auto w-full">
+                  <LiquidButton
+                    type="button"
+                    variant="ghost"
+                    onClick={onCancel}
+                    disabled={isSaving || isDeleting}
+                  >
+                    Cancelar
+                  </LiquidButton>
+                  <LiquidButton type="submit" disabled={isSaving || isDeleting}>
+                    {isSaving
+                      ? 'Salvando...'
+                      : isEditing
+                        ? 'Salvar Alterações'
+                        : 'Adicionar Transação'}
+                  </LiquidButton>
+                </div>
               </div>
             </form>
           )}
         </LiquidCard>
       </motion.div>
+      {isEditing && onDelete && (
+        <ConfirmDeleteModal
+          isOpen={confirmDeleteOpen}
+          message="Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita."
+          onCancel={() => {
+            if (!isDeleting) {
+              setConfirmDeleteOpen(false)
+            }
+          }}
+          onConfirm={handleConfirmDelete}
+          confirmLabel={isDeleting ? 'Excluindo...' : 'Excluir'}
+        />
+      )}
     </div>
   )
 }
