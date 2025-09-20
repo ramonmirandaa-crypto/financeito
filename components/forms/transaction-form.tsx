@@ -1,21 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
 import { LiquidCard } from '@/components/ui/liquid-card'
 import { LiquidButton } from '@/components/ui/liquid-button'
 import { LiquidInput } from '@/components/ui/liquid-input'
-import { formatDateToISODate } from '@/lib/format-utils'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
-
-export interface TransactionFormData {
-  id?: string
-  description: string
-  category?: string | null
-  amount: number
-  date: string
-  accountId?: string | null
-}
+import {
+  createTransactionFormValues,
+  parseTransactionFormValues,
+  transactionFormSchema,
+  type TransactionFormData,
+  type TransactionFormValues,
+} from '@/lib/validation/transaction'
 
 interface TransactionFormProps {
   transaction?: TransactionFormData | null
@@ -27,38 +26,12 @@ interface TransactionFormProps {
   manualAccounts: ManualAccountOption[]
 }
 
-const ensureDateValue = (value?: string | null) => formatDateToISODate(value)
-
-type FormState = {
-  id?: string
-  description: string
-  category: string
-  date: string
-  accountId: string
-}
-
 export interface ManualAccountOption {
   id: string
   name: string
   currency?: string
   balance?: number
 }
-
-const createInitialFormState = (
-  transaction: TransactionFormData | null | undefined,
-  defaultAccountId: string
-): FormState => ({
-  id: transaction?.id,
-  description: transaction?.description ?? '',
-  category: transaction?.category ?? '',
-  date: ensureDateValue(transaction?.date),
-  accountId: transaction?.accountId ?? defaultAccountId,
-})
-
-const createInitialAmount = (transaction?: TransactionFormData | null) =>
-  transaction?.amount !== undefined && transaction?.amount !== null
-    ? String(transaction.amount)
-    : ''
 
 export function TransactionForm({
   transaction,
@@ -70,16 +43,26 @@ export function TransactionForm({
   manualAccounts,
 }: TransactionFormProps) {
   const defaultAccountId = manualAccounts[0]?.id ?? ''
-  const [formValues, setFormValues] = useState<FormState>(() =>
-    createInitialFormState(transaction, defaultAccountId)
-  )
-  const [amountInput, setAmountInput] = useState<string>(() =>
-    createInitialAmount(transaction)
-  )
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const isEditing = Boolean(formValues.id)
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    setError,
+    clearErrors,
+    getValues,
+    formState: { errors },
+  } = useForm<TransactionFormValues>({
+    resolver: zodResolver(transactionFormSchema),
+    defaultValues: createTransactionFormValues(transaction ?? null, defaultAccountId),
+  })
+
+  const accountIdValue = watch('accountId')
+  const formId = watch('id')
 
   useEffect(() => {
     setConfirmDeleteOpen(false)
@@ -87,82 +70,79 @@ export function TransactionForm({
   }, [transaction?.id])
 
   useEffect(() => {
-    if (!transaction) {
-      setFormValues(createInitialFormState(null, manualAccounts[0]?.id ?? ''))
-      setAmountInput('')
-      return
-    }
-
-    setFormValues(createInitialFormState(transaction, manualAccounts[0]?.id ?? ''))
-    setAmountInput(createInitialAmount(transaction))
-  }, [transaction, manualAccounts])
+    reset(
+      createTransactionFormValues(transaction ?? null, manualAccounts[0]?.id ?? ''),
+      { keepDirty: false },
+    )
+  }, [transaction, manualAccounts, reset])
 
   useEffect(() => {
-    if (transaction || formValues.accountId) {
+    if (transaction || accountIdValue) {
       return
     }
 
     if (manualAccounts.length > 0) {
-      setFormValues((prev) => ({
-        ...prev,
-        accountId: prev.accountId || manualAccounts[0].id,
-      }))
+      setValue('accountId', manualAccounts[0].id, {
+        shouldDirty: false,
+        shouldValidate: true,
+      })
     }
-  }, [manualAccounts, transaction, formValues.accountId])
+  }, [transaction, accountIdValue, manualAccounts, setValue])
+
+  useEffect(() => {
+    if (accountIdValue) {
+      clearErrors('accountId')
+    }
+  }, [accountIdValue, clearErrors])
 
   const isSaving = Boolean(submitting)
   const showLoadingState = Boolean(loading && !transaction)
   const hasManualAccounts = manualAccounts.length > 0
-  const currentAccountIsManual = formValues.accountId
-    ? manualAccounts.some((account) => account.id === formValues.accountId)
+  const currentAccountIsManual = accountIdValue
+    ? manualAccounts.some((account) => account.id === accountIdValue)
     : false
-  const allowNonManualSelection = Boolean(formValues.accountId && !currentAccountIsManual)
+  const allowNonManualSelection = Boolean(accountIdValue && !currentAccountIsManual)
+  const manualAccountRequired = hasManualAccounts && !allowNonManualSelection
+  const isEditing = Boolean(formId)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  useEffect(() => {
+    if (!manualAccountRequired) {
+      clearErrors('accountId')
+    }
+  }, [manualAccountRequired, clearErrors])
+
+  const onValidSubmit = (values: TransactionFormValues) => {
     if (loading || submitting) return
 
-    const normalizedAmount = Number((amountInput || '').replace(',', '.'))
-    if (!Number.isFinite(normalizedAmount)) {
-      window.alert('Informe um valor numérico válido para a transação.')
+    if (manualAccountRequired && !values.accountId) {
+      setError('accountId', {
+        type: 'manual',
+        message: 'Selecione uma conta offline para registrar a transação.',
+      })
       return
     }
 
-    const trimmedDescription = formValues.description.trim()
-    if (!trimmedDescription) {
-      window.alert('A descrição da transação é obrigatória.')
-      return
+    try {
+      const payload = parseTransactionFormValues(values)
+      onSubmit(payload)
+    } catch (error) {
+      console.error('Erro ao preparar dados da transação:', error)
     }
-
-    const selectedAccountId = formValues.accountId?.trim() || ''
-    if (hasManualAccounts && !selectedAccountId) {
-      window.alert('Selecione uma conta offline para registrar a transação.')
-      return
-    }
-
-    const payload: TransactionFormData = {
-      description: trimmedDescription,
-      category: formValues.category?.trim() || null,
-      amount: normalizedAmount,
-      date: formValues.date,
-      accountId: selectedAccountId || null,
-    }
-
-    if (formValues.id) {
-      payload.id = formValues.id
-    }
-
-    onSubmit(payload)
   }
 
   const handleConfirmDelete = async () => {
-    if (!onDelete || !formValues.id || isDeleting) {
+    if (!onDelete || isDeleting) {
+      return
+    }
+
+    const currentId = getValues('id')
+    if (!currentId) {
       return
     }
 
     setIsDeleting(true)
     try {
-      const result = await onDelete(formValues.id)
+      const result = await onDelete(currentId)
       if (result) {
         setConfirmDeleteOpen(false)
       }
@@ -196,7 +176,8 @@ export function TransactionForm({
               </LiquidButton>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6">
+              <input type="hidden" {...register('id')} />
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xl font-semibold text-white">
                   {isEditing ? 'Editar Transação' : 'Nova Transação'}
@@ -217,17 +198,17 @@ export function TransactionForm({
                 </label>
                 <LiquidInput
                   type="text"
-                  value={formValues.description}
-                  onChange={(event) =>
-                    setFormValues((prev) => ({
-                      ...prev,
-                      description: event.target.value,
-                    }))
-                  }
                   placeholder="Ex: Compra no supermercado"
                   required
                   disabled={isSaving}
+                  error={Boolean(errors.description)}
+                  {...register('description')}
                 />
+                {errors.description && (
+                  <p className="mt-2 text-xs text-red-400">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -236,15 +217,9 @@ export function TransactionForm({
                 </label>
                 <LiquidInput
                   type="text"
-                  value={formValues.category}
-                  onChange={(event) =>
-                    setFormValues((prev) => ({
-                      ...prev,
-                      category: event.target.value,
-                    }))
-                  }
                   placeholder="Ex: Alimentação"
                   disabled={isSaving}
+                  {...register('category')}
                 />
               </div>
 
@@ -253,26 +228,24 @@ export function TransactionForm({
                   Conta offline {hasManualAccounts ? '*' : ''}
                 </label>
                 <select
-                  className="w-full rounded-md border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formValues.accountId}
-                  onChange={(event) =>
-                    setFormValues((prev) => ({
-                      ...prev,
-                      accountId: event.target.value,
-                    }))
-                  }
-                  required={hasManualAccounts && !allowNonManualSelection}
+                  className={`w-full rounded-md border bg-slate-900/70 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 ${
+                    errors.accountId
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-slate-700 focus:ring-blue-500'
+                  }`}
+                  required={manualAccountRequired}
                   disabled={
                     isSaving || (!hasManualAccounts && !allowNonManualSelection)
                   }
+                  {...register('accountId')}
                 >
                   <option value="">
                     {hasManualAccounts
                       ? 'Selecione a conta que receberá a transação'
                       : 'Nenhuma conta manual disponível'}
                   </option>
-                  {!currentAccountIsManual && formValues.accountId && (
-                    <option value={formValues.accountId} disabled>
+                  {!currentAccountIsManual && accountIdValue && (
+                    <option value={accountIdValue} disabled>
                       Conta conectada (somente leitura)
                     </option>
                   )}
@@ -282,6 +255,11 @@ export function TransactionForm({
                     </option>
                   ))}
                 </select>
+                {errors.accountId && (
+                  <p className="mt-2 text-xs text-red-400">
+                    {errors.accountId.message}
+                  </p>
+                )}
                 {!hasManualAccounts && (
                   <p className="mt-2 text-xs text-slate-400">
                     Crie uma conta offline para organizar seus lançamentos manuais.
@@ -302,15 +280,19 @@ export function TransactionForm({
                     Valor *
                   </label>
                   <LiquidInput
-                    type="number"
-                    step="0.01"
+                    type="text"
                     inputMode="decimal"
-                    value={amountInput}
-                    onChange={(event) => setAmountInput(event.target.value)}
                     placeholder="0,00"
                     required
                     disabled={isSaving}
+                    error={Boolean(errors.amount)}
+                    {...register('amount')}
                   />
+                  {errors.amount && (
+                    <p className="mt-2 text-xs text-red-400">
+                      {errors.amount.message}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -319,16 +301,16 @@ export function TransactionForm({
                   </label>
                   <LiquidInput
                     type="date"
-                    value={formValues.date}
-                    onChange={(event) =>
-                      setFormValues((prev) => ({
-                        ...prev,
-                        date: ensureDateValue(event.target.value),
-                      }))
-                    }
                     required
                     disabled={isSaving}
+                    error={Boolean(errors.date)}
+                    {...register('date')}
                   />
+                  {errors.date && (
+                    <p className="mt-2 text-xs text-red-400">
+                      {errors.date.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

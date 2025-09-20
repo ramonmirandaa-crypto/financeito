@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 
 import { prisma } from '@/lib/db'
 import { ensureUser } from '@/lib/ensure-user'
+import { transactionCreateSchema } from '@/lib/validation/transaction'
 
 const serializeTransaction = (transaction: any) => ({
   id: transaction.id,
@@ -137,45 +138,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { description, category, amount, date, accountId } = await request.json()
+    const body = await request.json()
+    const parsedResult = transactionCreateSchema.safeParse(body)
 
-    if (typeof description !== 'string' || !description.trim()) {
-      return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 })
+    if (!parsedResult.success) {
+      const { fieldErrors, formErrors } = parsedResult.error.flatten()
+      return NextResponse.json(
+        {
+          error: 'Dados inválidos',
+          fieldErrors,
+          formErrors,
+        },
+        { status: 400 },
+      )
     }
 
-    if (amount === undefined || amount === null) {
-      return NextResponse.json({ error: 'Valor é obrigatório' }, { status: 400 })
-    }
-
-    const numericAmount = Number(amount)
-    if (!Number.isFinite(numericAmount)) {
-      return NextResponse.json({ error: 'Valor inválido' }, { status: 400 })
-    }
-
-    if (typeof date !== 'string' || !date) {
-      return NextResponse.json({ error: 'Data é obrigatória' }, { status: 400 })
-    }
-
+    const { description, category, amount, date, accountId } = parsedResult.data
     const parsedDate = new Date(date)
-    if (Number.isNaN(parsedDate.getTime())) {
-      return NextResponse.json({ error: 'Data inválida' }, { status: 400 })
-    }
 
     await ensureUser(userId)
 
-    const trimmedAccountId =
-      typeof accountId === 'string' && accountId.trim() !== ''
-        ? accountId.trim()
-        : ''
-
     let targetAccount
-    if (trimmedAccountId) {
+    if (accountId) {
       targetAccount = await prisma.bankAccount.findFirst({
-        where: { id: trimmedAccountId, userId },
+        where: { id: accountId, userId },
       })
 
       if (!targetAccount) {
-        return NextResponse.json({ error: 'Conta bancária inválida' }, { status: 400 })
+        return NextResponse.json(
+          {
+            error: 'Conta bancária inválida',
+            fieldErrors: { accountId: ['Conta bancária inválida'] },
+            formErrors: [],
+          },
+          { status: 400 },
+        )
       }
     } else {
       const existingManualAccount = await prisma.bankAccount.findFirst({
@@ -185,7 +182,13 @@ export async function POST(request: NextRequest) {
 
       if (existingManualAccount) {
         return NextResponse.json(
-          { error: 'Selecione uma conta manual para registrar a transação.' },
+          {
+            error: 'Selecione uma conta manual para registrar a transação.',
+            fieldErrors: {
+              accountId: ['Selecione uma conta manual para registrar a transação.'],
+            },
+            formErrors: [],
+          },
           { status: 400 }
         )
       }
@@ -197,19 +200,16 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         accountId: targetAccount.id,
-        description: description.trim(),
-        category:
-          typeof category === 'string' && category.trim() !== ''
-            ? category.trim()
-            : null,
+        description,
+        category,
         currency: targetAccount.currency || 'BRL',
-        amount: new Prisma.Decimal(numericAmount),
+        amount: new Prisma.Decimal(amount),
         date: parsedDate,
       },
     })
 
     if (targetAccount.provider === 'manual') {
-      await adjustManualAccountBalance(targetAccount.id, numericAmount)
+      await adjustManualAccountBalance(targetAccount.id, amount)
     }
 
     return NextResponse.json(serializeTransaction(transaction), { status: 201 })
